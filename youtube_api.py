@@ -4,6 +4,7 @@ import urllib.parse
 import logging
 import aiohttp
 import asyncio
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,14 @@ async def is_video_embeddable(video_id):
             logger.error(f"Error checking embeddability for video {video_id}: {e}")
             return False
 
+def is_likely_music(title):
+    music_keywords = [
+        'concert', 'performance', 'live', 'carnatic', 'raga', 'album',
+        'song', 'music', 'classical', 'recital', 'jugalbandi', 'fusion'
+    ]
+    title_lower = title.lower()
+    return any(keyword in title_lower for keyword in music_keywords)
+
 async def get_latest_tmk_videos(limit=30):
     query = "T M Krishna"
     encoded_query = urllib.parse.quote(query)
@@ -61,15 +70,15 @@ async def get_latest_tmk_videos(limit=30):
                 if 'videoRenderer' in item:
                     video = item['videoRenderer']
                     video_id = video['videoId']
+                    title = video['title']['runs'][0]['text']
                     
                     # Extract video duration
                     duration_text = video.get('lengthText', {}).get('simpleText', '0:00')
                     duration_parts = duration_text.split(':')
                     duration_seconds = sum(int(x) * 60 ** i for i, x in enumerate(reversed(duration_parts)))
                     
-                    # Check if video is at least 1 minute long
+                    # Check if video is at least 1 minute long and embeddable
                     if duration_seconds >= 60 and await is_video_embeddable(video_id):
-                        title = video['title']['runs'][0]['text']
                         published_time = video.get('publishedTimeText', {}).get('simpleText', 'Unknown')
                         videos.append({
                             'title': title,
