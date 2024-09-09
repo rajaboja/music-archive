@@ -22,7 +22,7 @@ def get():
     playlist_embed_url = f"https://www.youtube.com/embed/?playlist={video_ids}&loop=1"
     
     player = Iframe(src=playlist_embed_url, 
-                    width="800", height="450", frameborder="0", 
+                    width="100%", height="450", frameborder="0", 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture", 
                     allowfullscreen=True)
     
@@ -32,13 +32,10 @@ def get():
         background-color: #f0f0f0;
         margin: 0;
         padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
     }
     .container {
         max-width: 800px;
+        margin: 0 auto;
         background-color: white;
         padding: 20px;
         border-radius: 10px;
@@ -47,16 +44,34 @@ def get():
     h1 {
         color: #333;
         text-align: center;
+        margin-bottom: 20px;
+    }
+    .player-wrapper {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+    }
+    .player-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    @media (max-width: 600px) {
+        .container {
+            padding: 10px;
+        }
     }
     """)
     
-    logger.info("Rendering main page with playlist")
-    return Titled("T M Krishna's Latest Music",
+    logger.info("Rendering playlist page")
+    return Titled("T M Krishna's Latest Concerts",
                   Div(
                       style,
                       Div(
-                          H1("T M Krishna's Latest Music"),
-                          player,
+                          Div(player, cls="player-wrapper"),
                           cls="container"
                       )
                   ))
