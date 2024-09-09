@@ -1,7 +1,6 @@
 from fasthtml.common import *
 import logging
-from youtube_api import get_latest_tmk_videos
-from playlist_manager import update_playlist, load_playlist
+from playlist_manager import load_playlist
 from config import LOGGING_CONFIG, CACHE_DURATION
 
 # Set up logging
@@ -12,7 +11,6 @@ app, rt = fast_app()
 
 @rt("/")
 def get():
-    update_playlist()
     playlist = load_playlist()
     
     # Create a comma-separated string of video IDs
