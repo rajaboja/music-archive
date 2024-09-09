@@ -2,12 +2,18 @@ from fasthtml.common import *
 import logging
 from playlist_manager import load_playlist
 from config import LOGGING_CONFIG, CACHE_DURATION
+import os
 
 # Set up logging
 logging.basicConfig(**LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 
-app, rt = fast_app()
+# Generate a random secret key
+import secrets
+SECRET_KEY = secrets.token_hex(16)
+
+# Create the FastHTML app with the secret key
+app, rt = fast_app(secret_key=SECRET_KEY)
 
 @rt("/")
 def get():
