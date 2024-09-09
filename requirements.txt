@@ -1,0 +1,4 @@
+python-fasthtml
+requests
+beautifulsoup4
+aiohttp
