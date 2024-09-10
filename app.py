@@ -19,8 +19,8 @@ class PlaylistView:
     async def render(self):
         playlist = await self.playlist_manager.load_playlist()
         video_ids = ','.join([video['video_id'] for video in playlist])
-        playlist_embed_url = f"https://www.youtube.com/embed/?playlist={video_ids}&loop=1&enablejsapi=1"
-        
+        playlist_embed_url = f"https://www.youtube.com/embed/?playlist={video_ids}&loop=1&enablejsapi=1&rel=0&modestbranding=1&controls=1&showinfo=0"
+
         player = Iframe(src=playlist_embed_url, 
                         width="100%", height="450", frameborder="0", 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture", 
