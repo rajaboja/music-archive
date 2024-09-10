@@ -10,9 +10,14 @@ logger = logging.getLogger(__name__)
 
 class YouTubeAPI:
     def __init__(self):
-        self.session = aiohttp.ClientSession()
+        self.session = None
+
+    async def initialize(self):
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
 
     async def fetch_video_data(self, url):
+        await self.initialize()
         try:
             async with self.session.get(url) as response:
                 response.raise_for_status()
@@ -37,6 +42,7 @@ class YouTubeAPI:
         return None
 
     async def is_video_embeddable(self, video_id):
+        await self.initialize()
         url = f"https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v={video_id}&format=json"
         try:
             async with self.session.get(url) as response:
@@ -50,6 +56,7 @@ class YouTubeAPI:
             return False
 
     async def get_latest_tmk_videos(self, limit=30):
+        await self.initialize()
         query = "T M Krishna"
         encoded_query = urllib.parse.quote(query)
         url = f"https://www.youtube.com/results?search_query={encoded_query}&sp=CAI%253D"
@@ -92,4 +99,5 @@ class YouTubeAPI:
         return videos
 
     async def close(self):
-        await self.session.close()
+        if self.session:
+            await self.session.close()

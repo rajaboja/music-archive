@@ -76,6 +76,10 @@ class PlaylistView:
                       ))
 
 playlist_manager = PlaylistManager(Config.CACHE_FILE, Config.CACHE_DURATION)
+
+async def initialize():
+    await playlist_manager.initialize()
+
 playlist_view = PlaylistView(playlist_manager)
 
 @rt("/")
@@ -83,6 +87,7 @@ async def get():
     return await playlist_view.render()
 
 if __name__ == "__main__":
+    asyncio.run(initialize())
     serve()
 
 # Cleanup

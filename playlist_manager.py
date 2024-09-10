@@ -13,6 +13,9 @@ class PlaylistManager:
         self.cache_duration = cache_duration
         self.youtube_api = YouTubeAPI()
 
+    async def initialize(self):
+        await self.youtube_api.initialize()
+
     async def update_playlist(self):
         current_time = time.time()
         
@@ -38,6 +41,7 @@ class PlaylistManager:
         return videos
 
     async def load_playlist(self):
+        await self.initialize()
         videos = await self.update_playlist()
         logger.info(f"Loaded playlist with {len(videos)} videos")
         return videos
