@@ -3,6 +3,7 @@ import asyncio
 import logging
 import json
 import os
+from datetime import datetime, timedelta
 from youtube_api import YouTubeAPI
 
 logger = logging.getLogger(__name__)
@@ -17,28 +18,44 @@ class PlaylistManager:
         await self.youtube_api.initialize()
 
     async def update_playlist(self):
-        current_time = time.time()
+        current_time = datetime.now()
         
         try:
             if os.path.exists(self.cache_file):
                 with open(self.cache_file, 'r') as f:
                     cache_data = json.load(f)
-                    if current_time - cache_data['timestamp'] <= self.cache_duration:
+                    last_update = datetime.fromisoformat(cache_data['timestamp'])
+                    if current_time - last_update <= timedelta(days=1):
                         logger.info("Using cached playlist")
                         return cache_data['videos']
+                    else:
+                        # Get new videos since last update
+                        new_videos = await self.youtube_api.get_latest_tmk_videos_since(last_update)
+                        videos = self.merge_and_sort_videos(cache_data['videos'], new_videos)
+                        logger.info(f"Added {len(new_videos)} new videos to the playlist")
+            else:
+                # If no cache exists, get all videos
+                videos = await self.youtube_api.get_latest_tmk_videos(30)
+                logger.info(f"Created new playlist with {len(videos)} videos")
         except Exception as e:
-            logger.error(f"Error reading cache file: {e}")
-        
-        videos = await self.youtube_api.get_latest_tmk_videos(30)
+            logger.error(f"Error reading or updating cache: {e}")
+            videos = await self.youtube_api.get_latest_tmk_videos(30)
         
         try:
             with open(self.cache_file, 'w') as f:
-                json.dump({'timestamp': current_time, 'videos': videos}, f)
+                json.dump({'timestamp': current_time.isoformat(), 'videos': videos}, f)
             logger.info("Playlist updated and cached")
         except Exception as e:
             logger.error(f"Error writing cache file: {e}")
         
         return videos
+
+    def merge_and_sort_videos(self, old_videos, new_videos):
+        # Merge new videos with old ones, removing duplicates
+        video_dict = {video['video_id']: video for video in old_videos + new_videos}
+        merged_videos = list(video_dict.values())
+        # Sort videos by published time (newest first)
+        return sorted(merged_videos, key=lambda x: x['published_time'], reverse=True)
 
     async def load_playlist(self):
         await self.initialize()
