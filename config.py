@@ -3,6 +3,7 @@
 import os
 import secrets
 import logging
+import sys
 
 
 class Config:
@@ -15,27 +16,27 @@ class Config:
             },
         },
         'handlers': {
-            'file': {
+            'console': {
                 'level': 'INFO',
-                'class': 'logging.FileHandler',
-                'filename': 'app.log',
+                'class': 'logging.StreamHandler',
                 'formatter': 'default',
+                'stream': sys.stdout,
             },
         },
         'loggers': {
             '': {
-                'handlers': ['file'],
+                'handlers': ['console'],
                 'level': 'INFO',
                 'propagate': True,
             },
             'watchfiles.main': {
-                'level': 'WARNING',  # Change the level to WARNING to filter out INFO messages
-                'handlers': ['file'],
+                'level': 'WARNING',
+                'handlers': ['console'],
                 'propagate': False,
             },
         },
     }
 
-    CACHE_DURATION = int(os.getenv('CACHE_DURATION', 3600*24*7))  # 1 hour
+    CACHE_DURATION = int(os.getenv('CACHE_DURATION', 3600*24*7))  # 7 days
     CACHE_FILE = os.getenv('CACHE_FILE', '/tmp/tmk_playlist_cache.json')
     SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(16))
