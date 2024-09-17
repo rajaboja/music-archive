@@ -25,7 +25,7 @@ class PlaylistManager:
                 with open(self.cache_file, 'r') as f:
                     cache_data = json.load(f)
                     last_update = datetime.fromisoformat(cache_data['timestamp'])
-                    if current_time - last_update <= timedelta(days=1):
+                    if current_time - last_update <= self.cache_duration:  
                         logger.info("Using cached playlist")
                         return cache_data['videos']
                     else:
@@ -35,11 +35,11 @@ class PlaylistManager:
                         logger.info(f"Added {len(new_videos)} new videos to the playlist")
             else:
                 # If no cache exists, get all videos
-                videos = await self.youtube_api.get_latest_tmk_videos()  # Remove the argument here
+                videos = await self.youtube_api.get_latest_tmk_videos()  
                 logger.info(f"Created new playlist with {len(videos)} videos")
         except Exception as e:
             logger.error(f"Error reading or updating cache: {e}")
-            videos = await self.youtube_api.get_latest_tmk_videos()  # Remove the argument here as well
+            videos = await self.youtube_api.get_latest_tmk_videos()  
 
         try:
             with open(self.cache_file, 'w') as f:
