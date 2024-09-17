@@ -121,8 +121,10 @@ class PlaylistView:
                 if (currentVideo) {
                     trackInfo.innerHTML = '<h3>' + currentVideo.title + '</h3>' +
                                           '<p>Duration: ' + currentVideo.length + '</p>' +
-                                          '<p>Published: ' + currentVideo.published_date + '</p>' +
-                                          '<p>Description: ' + currentVideo.description + '</p>';
+                                          '<p>Published: ' + currentVideo.published_date + '</p>';
+                    if (currentVideo.description) {
+                        trackInfo.innerHTML += '<p>Description: ' + currentVideo.description + '</p>';
+                    }
                 } else {
                     trackInfo.innerHTML = '<h3>' + videoData.title + '</h3>';
                 }
