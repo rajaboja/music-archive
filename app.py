@@ -5,6 +5,7 @@ from playlist_manager import PlaylistManager
 from config import Config
 import asyncio
 import logging.config
+import re
 
 # Set up logging
 logging.config.dictConfig(Config.LOGGING_CONFIG)
@@ -114,13 +115,31 @@ class PlaylistView:
                 }
             }
 
+            function formatDuration(duration) {
+                var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+                var hours = (parseInt(match[1]) || 0);
+                var minutes = (parseInt(match[2]) || 0);
+                var seconds = (parseInt(match[3]) || 0);
+                
+                var result = "";
+                if (hours > 0) {
+                    result += hours + "h ";
+                }
+                if (minutes > 0 || hours > 0) {
+                    result += minutes + "m ";
+                }
+                result += seconds + "s";
+                
+                return result.trim();
+            }
+
             function updateTrackInfo() {
                 var videoData = player.getVideoData();
                 var currentVideo = playlist.find(video => video.video_id === videoData.video_id);
                 var trackInfo = document.getElementById('track-info');
                 if (currentVideo) {
                     trackInfo.innerHTML = '<h3>' + currentVideo.title + '</h3>' +
-                                          '<p>Duration: ' + currentVideo.length + '</p>' +
+                                          '<p>Duration: ' + formatDuration(currentVideo.length) + '</p>' +
                                           '<p>Published: ' + currentVideo.published_date + '</p>';
                     if (currentVideo.description) {
                         trackInfo.innerHTML += '<p>Description: ' + currentVideo.description + '</p>';
