@@ -35,6 +35,7 @@ class PlaylistManager:
             return self.videos
 
         try:
+            self.storage.download_sheet()  # Only download if cache is expired
             self.videos = self.storage.load_playlist()
             self.last_update = current_time
             logger.info(f"Updated playlist with {len(self.videos)} videos")

@@ -22,8 +22,6 @@ class DriveStorage:
 
     def load_playlist(self):
         try:
-            self.download_sheet()
-            
             # Read the Excel file
             df = pd.read_excel(self.local_path, engine='openpyxl')
             playlist = df.to_dict('records')
