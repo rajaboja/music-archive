@@ -37,6 +37,9 @@ class Config:
         },
     }
 
-    CACHE_DURATION = int(os.getenv('CACHE_DURATION', 3600*24*7))  # 7 days
+    CACHE_DURATION = int(os.getenv('CACHE_DURATION', 3600*24))  # 1 day
     CACHE_FILE = os.getenv('CACHE_FILE', '/tmp/tmk_playlist_cache.json')
     SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(16))
+
+    GOOGLE_DRIVE_FILE_ID = os.getenv('GOOGLE_DRIVE_FILE_ID')
+    LOCAL_SPREADSHEET_PATH = os.getenv('LOCAL_SPREADSHEET_PATH', '/tmp/spreadsheet.xlsx')

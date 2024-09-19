@@ -1,67 +1,51 @@
 import time
 import asyncio
 import logging
-import json
-import os
 from datetime import datetime, timedelta
-from youtube_api_serp import YouTubeAPISerpApi
+from drive_storage import DriveStorage
 
 logger = logging.getLogger(__name__)
 
 class PlaylistManager:
-    def __init__(self, cache_file, cache_duration):
-        self.cache_file = cache_file
-        self.cache_duration = cache_duration
-        self.youtube_api = YouTubeAPISerpApi()
+    def __init__(self, file_id, local_path, cache_duration):
+        self.cache_duration = timedelta(seconds=cache_duration)
+        self.storage = DriveStorage(file_id, local_path)
+        self.last_update = None
+        self.videos = []
 
     async def initialize(self):
-        await self.youtube_api.initialize()
+        await self.load_from_storage()
+
+    async def load_from_storage(self):
+        try:
+            self.videos = self.storage.load_playlist()
+            if self.videos:
+                self.last_update = datetime.now()
+            logger.info(f"Loaded {len(self.videos)} videos from storage")
+        except Exception as e:
+            logger.error(f"Error loading from storage: {e}")
+            self.last_update = None
+            self.videos = []
 
     async def update_playlist(self):
         current_time = datetime.now()
         
-        try:
-            if os.path.exists(self.cache_file):
-                with open(self.cache_file, 'r') as f:
-                    cache_data = json.load(f)
-                    last_update = datetime.fromisoformat(cache_data['timestamp'])
-                    if current_time - last_update <= self.cache_duration:  
-                        logger.info("Using cached playlist")
-                        return cache_data['videos']
-                    else:
-                        # Get new videos since last update
-                        new_videos = await self.youtube_api.get_latest_tmk_videos_since(last_update)
-                        videos = self.merge_and_sort_videos(cache_data['videos'], new_videos)
-                        logger.info(f"Added {len(new_videos)} new videos to the playlist")
-            else:
-                # If no cache exists, get all videos
-                videos = await self.youtube_api.get_latest_tmk_videos()  
-                logger.info(f"Created new playlist with {len(videos)} videos")
-        except Exception as e:
-            logger.error(f"Error reading or updating cache: {e}")
-            videos = await self.youtube_api.get_latest_tmk_videos()  
+        if self.last_update and (current_time - self.last_update) <= self.cache_duration:
+            logger.info("Using cached playlist")
+            return self.videos
 
         try:
-            with open(self.cache_file, 'w') as f:
-                json.dump({'timestamp': current_time.isoformat(), 'videos': videos}, f)
-            logger.info("Playlist updated and cached")
+            self.videos = self.storage.load_playlist()
+            self.last_update = current_time
+            logger.info(f"Updated playlist with {len(self.videos)} videos")
         except Exception as e:
-            logger.error(f"Error writing cache file: {e}")
-        
-        return videos
+            logger.error(f"Error updating playlist: {e}")
 
-    def merge_and_sort_videos(self, old_videos, new_videos):
-        # Merge new videos with old ones, removing duplicates
-        video_dict = {video['video_id']: video for video in old_videos + new_videos}
-        merged_videos = list(video_dict.values())
-        # Sort videos by published time (newest first)
-        return sorted(merged_videos, key=lambda x: x['published_date'], reverse=True)
+        return self.videos
 
     async def load_playlist(self):
-        await self.initialize()
-        videos = await self.update_playlist()
-        logger.info(f"Loaded playlist with {len(videos)} videos")
-        return videos
+        return await self.update_playlist()
 
     async def close(self):
-        await self.youtube_api.close()
+        # No need to close anything since we're not using an API client
+        pass

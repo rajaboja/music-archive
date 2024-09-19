@@ -150,7 +150,7 @@ class PlaylistView:
             logger.error(f"An error occurred while rendering the playlist: {e}")
             return Titled("Error", Div("An unexpected error occurred. Please try again later."))
 
-playlist_manager = PlaylistManager(Config.CACHE_FILE, Config.CACHE_DURATION)
+playlist_manager = PlaylistManager(Config.GOOGLE_DRIVE_FILE_ID, Config.LOCAL_SPREADSHEET_PATH, Config.CACHE_DURATION)
 
 async def initialize():
     await playlist_manager.initialize()
