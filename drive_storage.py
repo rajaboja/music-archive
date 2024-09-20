@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from loguru import logger
 import io
+import tempfile
 
 class DriveStorage:
     def __init__(self, file_id, local_path):
@@ -19,7 +20,12 @@ class DriveStorage:
         url = f'https://drive.google.com/uc?id={self.file_id}'
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
-            output = gdown.cached_download(url, self.local_path, quiet=False)
+            # Set the cache root to a temporary directory
+            temp_cache_dir = tempfile.gettempdir()
+            gdown.cached_download.cache_root = temp_cache_dir
+            logger.info(f"Set gdown cache root to: {temp_cache_dir}")
+
+            output = gdown.cached_download(url, self.local_path, quiet=False,)
             if output is None:
                 raise Exception("Failed to download the file")
             self.df = pd.read_excel(self.local_path)
