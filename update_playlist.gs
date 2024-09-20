@@ -1,6 +1,5 @@
 // Google Apps Script to fetch T M Krishna's latest YouTube videos using a general search and update the spreadsheet
 
-const YOUTUBE_API_KEY = 'YOUR_YOUTUBE_API_KEY';
 const SEARCH_QUERY = 'T M Krishna';
 const MAX_RESULTS = 50; // Number of videos to fetch
 
@@ -15,7 +14,7 @@ function updateSpreadsheet() {
     sheet.insertRowsAfter(headerRow, newVideos.length);
     var data = newVideos.map(function(video) {
       return [
-        video.id.videoId,
+        video.id,
         video.snippet.title,
         video.contentDetails.duration,
         video.snippet.publishedAt,
@@ -52,15 +51,12 @@ function getLatestVideos(lastVideoDate) {
     return item.id.videoId;
   });
   
-  var videoDetails = YouTube.Videos.list('contentDetails', {
+  var videoDetails = YouTube.Videos.list('snippet,contentDetails', {
     id: videoIds.join(',')
   });
   
-  // Merge search results with video details
-  var mergedResults = results.items.map(function(item, index) {
-    item.contentDetails = videoDetails.items[index].contentDetails;
-    return item;
-  });
+  // Use video details instead of search results for more complete information
+  var mergedResults = videoDetails.items;
   
   // Remove the last item from the list
   if (mergedResults.length > 0) {
