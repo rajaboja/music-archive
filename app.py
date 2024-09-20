@@ -4,7 +4,7 @@ from playlist_manager import PlaylistManager
 from config import Config
 from views.playlist_view import PlaylistView
 from services.youtube_service import YouTubeService
-from fastapi.staticfiles import StaticFiles
+from starlette.staticfiles import StaticFiles
 
 # Set up logging
 logging.config.dictConfig(Config.LOGGING_CONFIG)
