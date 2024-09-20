@@ -4,6 +4,7 @@ import os
 import secrets
 import logging
 import sys
+import tempfile
 
 
 class Config:
@@ -41,4 +42,4 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(16))
 
     GOOGLE_DRIVE_FILE_ID = os.getenv('GOOGLE_DRIVE_FILE_ID')
-    LOCAL_SPREADSHEET_PATH = '/tmp/spreadsheet.xlsx'
+    LOCAL_SPREADSHEET_PATH = tempfile.gettempdir() + '/spreadsheet.xlsx'
