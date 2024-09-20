@@ -19,7 +19,7 @@ class DriveStorage:
         url = f'https://drive.google.com/uc?id={self.file_id}'
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
-            output = gdown.download(url, self.local_path, quiet=False)
+            output = gdown.cached_download(url, self.local_path, quiet=False)
             if output is None:
                 raise Exception("Failed to download the file")
             self.df = pd.read_excel(self.local_path)
