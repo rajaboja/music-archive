@@ -21,10 +21,11 @@ async def initialize_services():
 @asynccontextmanager
 async def lifespan(app):
     # Initialize services
-    app.state.services = await initialize_services()
+    playlist_manager, youtube_service = await initialize_services()
+    app.state.playlist_manager = playlist_manager
+    app.state.youtube_service = youtube_service
     yield
     # Clean up services
-    playlist_manager, youtube_service = app.state.services
     await playlist_manager.close()
     await youtube_service.close()
 
@@ -36,7 +37,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @rt("/")
 async def get(request):
-    playlist_manager, youtube_service = request.app.state.services
+    playlist_manager = request.app.state.playlist_manager
+    youtube_service = request.app.state.youtube_service
     playlist_view = PlaylistView(playlist_manager, youtube_service)
     return await playlist_view.render()
 
