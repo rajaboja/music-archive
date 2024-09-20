@@ -5,7 +5,6 @@ from config import Config
 from views.playlist_view import PlaylistView
 from services.youtube_service import YouTubeService
 from starlette.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
 
 # Set up logging
 logging.config.dictConfig(Config.LOGGING_CONFIG)
@@ -23,29 +22,8 @@ async def initialize_services():
         logger.error(f"Error initializing services: {e}")
         raise
 
-@asynccontextmanager
-async def lifespan(app):
-    logger.info("Entering lifespan context manager")
-    try:
-        # Initialize services
-        playlist_manager, youtube_service = await initialize_services()
-        app.state.playlist_manager = playlist_manager
-        app.state.youtube_service = youtube_service
-        logger.info("Services attached to app.state")
-        yield
-    except Exception as e:
-        logger.error(f"Error in lifespan: {e}")
-        raise
-    finally:
-        # Clean up services
-        logger.info("Cleaning up services")
-        if hasattr(app.state, 'playlist_manager'):
-            await app.state.playlist_manager.close()
-        if hasattr(app.state, 'youtube_service'):
-            await app.state.youtube_service.close()
-
-# Create the FastHTML app with the secret key and lifespan
-app, rt = fast_app(secret_key=Config.SECRET_KEY, lifespan=lifespan)
+# Create the FastHTML app with the secret key
+app, rt = fast_app(secret_key=Config.SECRET_KEY)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -54,6 +32,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def get(request):
     logger.info("Handling GET request")
     try:
+        if not hasattr(app.state, 'playlist_manager') or not hasattr(app.state, 'youtube_service'):
+            playlist_manager, youtube_service = await initialize_services()
+            app.state.playlist_manager = playlist_manager
+            app.state.youtube_service = youtube_service
+            logger.info("Services initialized and attached to app.state")
+
         playlist_manager = request.app.state.playlist_manager
         youtube_service = request.app.state.youtube_service
         playlist_view = PlaylistView(playlist_manager, youtube_service)
