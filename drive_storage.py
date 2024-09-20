@@ -15,7 +15,6 @@ class DriveStorage:
         logger.info(f"DriveStorage initialized with file_id: {file_id}, local_path: {local_path}")
         
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(self.local_path), exist_ok=True)
 
     def download_sheet(self):
         url = f'https://drive.google.com/uc?id={self.file_id}'
