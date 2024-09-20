@@ -14,7 +14,6 @@ class DriveStorage:
         self.df = None
         logger.info(f"DriveStorage initialized with file_id: {file_id}, local_path: {local_path}")
         
-        # Ensure the directory exists
 
     def download_sheet(self):
         url = f'https://drive.google.com/uc?id={self.file_id}'
