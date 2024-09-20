@@ -21,11 +21,8 @@ class DriveStorage:
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
             # Set the cache root to a temporary directory
-            temp_cache_dir = tempfile.gettempdir()
-            gdown.cached_download.cache_root = temp_cache_dir
-            logger.info(f"Set gdown cache root to: {temp_cache_dir}")
 
-            output = gdown.cached_download(url, self.local_path, quiet=False,)
+            output = gdown.download(url, self.local_path, quiet=False,use_cookies=False)
             if output is None:
                 raise Exception("Failed to download the file")
             self.df = pd.read_excel(self.local_path)
