@@ -9,6 +9,7 @@ class PlaylistManager:
         self.cache_duration = timedelta(seconds=cache_duration)
         self.storage = DriveStorage(file_id, local_path)
         self.last_update = None
+        self.cached_playlist = None
 
     async def initialize(self):
         await self.load_playlist()
@@ -16,20 +17,21 @@ class PlaylistManager:
     async def update_playlist(self):
         current_time = datetime.now()
         
-        if self.last_update and (current_time - self.last_update) <= self.cache_duration:
+        if self.cached_playlist and self.last_update and (current_time - self.last_update) <= self.cache_duration:
             logger.info("Using cached playlist")
-            return self.storage.load_playlist()
+            return self.cached_playlist
 
         try:
             self.storage.download_sheet()  # Only download if cache is expired
             filtered_videos = self.storage.load_playlist()
             
             self.last_update = current_time
+            self.cached_playlist = filtered_videos
             logger.info(f"Updated playlist with {len(filtered_videos)} videos")
             return filtered_videos
         except Exception as e:
             logger.error(f"Error updating playlist: {e}")
-            return []
+            return self.cached_playlist if self.cached_playlist else []
 
     async def load_playlist(self):
         return await self.update_playlist()
