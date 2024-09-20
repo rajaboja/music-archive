@@ -46,5 +46,5 @@ class PlaylistManager:
         return await self.update_playlist()
 
     async def close(self):
-        logger.info("Closing PlaylistManager")        # No need to close anything since we're not using an API client
+        logger.info("Closing PlaylistManager")
         pass

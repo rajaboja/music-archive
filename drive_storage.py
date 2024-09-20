@@ -5,6 +5,7 @@ import openpyxl
 import re
 from datetime import datetime
 from loguru import logger
+import io
 
 class DriveStorage:
     def __init__(self, file_id, local_path):
@@ -20,8 +21,11 @@ class DriveStorage:
         url = f'https://drive.google.com/uc?id={self.file_id}'
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
-            gdown.download(url, self.local_path, quiet=False)
-            logger.info(f"Downloaded sheet to {self.local_path}")
+            content = gdown.download(url, quiet=False, output=None)
+            if content is None:
+                raise Exception("Failed to download the file")
+            self.df = pd.read_excel(io.BytesIO(content))
+            logger.info(f"Downloaded and loaded sheet into memory")
         except Exception as e:
             logger.exception(f"Error downloading sheet: {e}")
             raise
@@ -29,12 +33,7 @@ class DriveStorage:
     def load_playlist(self, min_duration_seconds=60):
         logger.info(f"Loading playlist with min_duration_seconds: {min_duration_seconds}")
         if self.df is None:
-            try:
-                self.df = pd.read_excel(self.local_path)
-                logger.info(f"Loaded {len(self.df)} rows from {self.local_path}")
-            except Exception as e:
-                logger.exception(f"Error reading Excel file: {e}")
-                raise
+            raise Exception("Sheet not downloaded. Call download_sheet() first.")
 
         # Convert duration to seconds
         self.df['duration_seconds'] = self.df['length'].apply(self.parse_duration)
