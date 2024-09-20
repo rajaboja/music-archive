@@ -57,10 +57,17 @@ function getLatestVideos(lastVideoDate) {
   });
   
   // Merge search results with video details
-  return results.items.map(function(item, index) {
+  var mergedResults = results.items.map(function(item, index) {
     item.contentDetails = videoDetails.items[index].contentDetails;
     return item;
   });
+  
+  // Remove the last item from the list
+  if (mergedResults.length > 0) {
+    mergedResults.pop();
+  }
+  
+  return mergedResults;
 }
 
 // Set up a time-based trigger to run this function daily
