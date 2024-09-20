@@ -1,8 +1,6 @@
-import logging
+from loguru import logger
 from datetime import datetime, timedelta
 from drive_storage import DriveStorage
-
-logger = logging.getLogger(__name__)
 
 class PlaylistManager:
     def __init__(self, file_id, local_path, cache_duration):
@@ -10,8 +8,10 @@ class PlaylistManager:
         self.storage = DriveStorage(file_id, local_path)
         self.last_update = None
         self.cached_playlist = None
+        logger.info(f"PlaylistManager initialized with file_id: {file_id}, local_path: {local_path}, cache_duration: {cache_duration}")
 
     async def initialize(self):
+        logger.info("Initializing PlaylistManager")
         await self.load_playlist()
 
     async def update_playlist(self):
@@ -22,7 +22,11 @@ class PlaylistManager:
             return self.cached_playlist
 
         try:
-            self.storage.download_sheet()  # Only download if cache is expired
+            logger.info("Attempting to download sheet")
+            self.storage.download_sheet()
+            logger.info("Sheet downloaded successfully")
+            
+            logger.info("Loading playlist from storage")
             filtered_videos = self.storage.load_playlist()
             
             self.last_update = current_time
@@ -30,12 +34,17 @@ class PlaylistManager:
             logger.info(f"Updated playlist with {len(filtered_videos)} videos")
             return filtered_videos
         except Exception as e:
-            logger.error(f"Error updating playlist: {e}")
-            return self.cached_playlist if self.cached_playlist else []
+            logger.exception(f"Error updating playlist: {e}")
+            if self.cached_playlist:
+                logger.info("Returning cached playlist due to error")
+                return self.cached_playlist
+            logger.warning("No cached playlist available")
+            return []
 
     async def load_playlist(self):
+        logger.info("Loading playlist")
         return await self.update_playlist()
 
     async def close(self):
-        # No need to close anything since we're not using an API client
+        logger.info("Closing PlaylistManager")        # No need to close anything since we're not using an API client
         pass

@@ -1,10 +1,8 @@
 import json
-import logging
+from loguru import logger
 from fasthtml.common import *
 from services.youtube_service import YouTubeService
 from playlist_manager import PlaylistManager
-
-logger = logging.getLogger(__name__)
 
 class PlaylistView:
     def __init__(self, playlist_manager: PlaylistManager, youtube_service: YouTubeService):
@@ -34,7 +32,7 @@ class PlaylistView:
                           ))
 
         except Exception as e:
-            logger.error(f"An error occurred while rendering the playlist: {e}")
+            logger.exception(f"An error occurred while rendering the playlist: {e}")
             return Titled("Error", Div("An unexpected error occurred. Please try again later."))
 
     def _create_player(self, playlist_embed_url):
