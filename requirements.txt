@@ -3,4 +3,4 @@ openpyxl==3.1.2
 pandas==2.2.1
 gdown==4.7.1
 numpy==1.26.4
-
+loguru==0.7.0
