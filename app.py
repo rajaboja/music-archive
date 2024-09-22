@@ -42,9 +42,6 @@ async def get(request):
         youtube_service = request.app.state.youtube_service
         playlist_view = PlaylistView(playlist_manager, youtube_service)
         return await playlist_view.render()
-    except AttributeError as e:
-        logger.exception(f"AttributeError in GET handler: {e}")
-        return Titled("Error", Div("An error occurred while loading the playlist. Please try again later."))
     except Exception as e:
         logger.exception(f"Unexpected error in GET handler: {e}")
         return Titled("Error", Div("An unexpected error occurred. Please try again later."))
