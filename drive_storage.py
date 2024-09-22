@@ -1,12 +1,8 @@
 import gdown
 import pandas as pd
-import os
-import openpyxl
 import re
-from datetime import datetime
 from loguru import logger
-import io
-import tempfile
+
 
 class DriveStorage:
     def __init__(self, file_id, local_path):
@@ -20,8 +16,6 @@ class DriveStorage:
         url = f'https://drive.google.com/uc?id={self.file_id}'
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
-            # Set the cache root to a temporary directory
-
             output = gdown.download(url, self.local_path, quiet=False,use_cookies=False)
             if output is None:
                 raise Exception("Failed to download the file")
