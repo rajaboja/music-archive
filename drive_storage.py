@@ -1,7 +1,8 @@
-import gdown
 import pandas as pd
 import re
 from loguru import logger
+import requests
+import io
 
 
 class DriveStorage:
@@ -13,13 +14,14 @@ class DriveStorage:
         
 
     def download_sheet(self):
-        url = f'https://drive.google.com/uc?id={self.file_id}'
+        url = f'https://docs.google.com/spreadsheets/d/{self.file_id}/export?format=xlsx'
         logger.info(f"Attempting to download sheet from URL: {url}")
         try:
-            output = gdown.download(url, self.local_path, quiet=False,use_cookies=False)
-            if output is None:
-                raise Exception("Failed to download the file")
-            self.df = pd.read_excel(self.local_path)
+            response = requests.get(url)
+            response.raise_for_status()
+            with open(self.local_path, 'wb') as f:
+                f.write(response.content)
+            self.df = pd.read_excel(io.BytesIO(response.content))
             logger.info(f"Downloaded and loaded sheet into memory")
         except Exception as e:
             logger.exception(f"Error downloading sheet: {e}")
