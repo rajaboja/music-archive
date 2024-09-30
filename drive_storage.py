@@ -6,11 +6,12 @@ import io
 
 
 class DriveStorage:
-    def __init__(self, file_id, local_path):
+    def __init__(self, file_id, local_path, min_duration_seconds):
         self.file_id = file_id
         self.local_path = local_path
+        self.min_duration_seconds = min_duration_seconds
         self.df = None
-        logger.info(f"DriveStorage initialized with file_id: {file_id}, local_path: {local_path}")
+        logger.info(f"DriveStorage initialized with file_id: {file_id}, local_path: {local_path}, min_duration_seconds: {min_duration_seconds}")
         
 
     def download_sheet(self):
@@ -27,8 +28,8 @@ class DriveStorage:
             logger.exception(f"Error downloading sheet: {e}")
             raise
 
-    def load_playlist(self, min_duration_seconds=60):
-        logger.info(f"Loading playlist with min_duration_seconds: {min_duration_seconds}")
+    def load_playlist(self):
+        logger.info(f"Loading playlist with min_duration_seconds: {self.min_duration_seconds}")
         if self.df is None:
             raise Exception("Sheet not downloaded. Call download_sheet() first.")
 
@@ -36,12 +37,12 @@ class DriveStorage:
         self.df['duration_seconds'] = self.df['length'].apply(self.parse_duration)
 
         # Filter videos shorter than min_duration_seconds
-        filtered_df = self.df[self.df['duration_seconds'] >= min_duration_seconds].copy()
+        filtered_df = self.df[self.df['duration_seconds'] > self.min_duration_seconds].copy()
 
         # Format the published date to keep only the date part as a string
         filtered_df['published_date'] = pd.to_datetime(filtered_df['published_date']).dt.strftime('%Y-%m-%d')
 
-        logger.info(f"Filtered to {len(filtered_df)} videos (duration >= {min_duration_seconds} seconds)")
+        logger.info(f"Filtered to {len(filtered_df)} videos (duration > {self.min_duration_seconds} seconds)")
 
         # Convert DataFrame to list of dictionaries
         return filtered_df.to_dict('records')

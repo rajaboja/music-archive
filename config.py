@@ -20,7 +20,10 @@ class Config:
     # Use /tmp for Lambda, or fall back to current directory for local development
     LOCAL_SPREADSHEET_PATH = os.getenv('LOCAL_SPREADSHEET_PATH', os.path.join('/tmp', 'spreadsheet.xlsx'))
 
+    MIN_DURATION_SECONDS = int(os.getenv('MIN_DURATION_SECONDS', 120))  # Default to 2 minutes
+
     # Add logging for configuration
     logger.info(f"CACHE_DURATION: {CACHE_DURATION}")
     logger.info(f"GOOGLE_DRIVE_FILE_ID: {GOOGLE_DRIVE_FILE_ID}")
     logger.info(f"LOCAL_SPREADSHEET_PATH: {LOCAL_SPREADSHEET_PATH}")
+    logger.info(f"MIN_DURATION_SECONDS: {MIN_DURATION_SECONDS}")

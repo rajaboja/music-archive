@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 from drive_storage import DriveStorage
 
 class PlaylistManager:
-    def __init__(self, file_id, local_path, cache_duration):
+    def __init__(self, file_id, local_path, cache_duration, min_duration_seconds):
         self.cache_duration = timedelta(seconds=cache_duration)
-        self.storage = DriveStorage(file_id, local_path)
+        self.storage = DriveStorage(file_id, local_path, min_duration_seconds)
         self.last_update = None
         self.cached_playlist = None
-        logger.info(f"PlaylistManager initialized with file_id: {file_id}, local_path: {local_path}, cache_duration: {cache_duration}")
+        logger.info(f"PlaylistManager initialized with file_id: {file_id}, local_path: {local_path}, cache_duration: {cache_duration}, min_duration_seconds: {min_duration_seconds}")
 
     async def initialize(self):
         logger.info("Initializing PlaylistManager")

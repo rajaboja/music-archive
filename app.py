@@ -9,7 +9,12 @@ from starlette.staticfiles import StaticFiles
 async def initialize_services():
     try:
         logger.info("Initializing services")
-        playlist_manager = PlaylistManager(Config.GOOGLE_DRIVE_FILE_ID, Config.LOCAL_SPREADSHEET_PATH, Config.CACHE_DURATION)
+        playlist_manager = PlaylistManager(
+            Config.GOOGLE_DRIVE_FILE_ID, 
+            Config.LOCAL_SPREADSHEET_PATH, 
+            Config.CACHE_DURATION,
+            Config.MIN_DURATION_SECONDS
+        )
         youtube_service = YouTubeService()
         await playlist_manager.initialize()
         await youtube_service.initialize()
