@@ -2,3 +2,4 @@ __pycache__/
 .sesskey
 app.log
 .vercel
+.clasp.json
