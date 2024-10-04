@@ -17,5 +17,8 @@ jobs:
     - name: Create clasprc.json file
       run: |
         echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+    - name: Create .clasp.json file
+      run: |
+        echo '${{ secrets.CLASP_JSON }}' > .clasp.json
     - name: Deploy with clasp
-      run: clasp push
+      run: clasp push -f
