@@ -55,15 +55,7 @@ function getLatestVideos(lastVideoDate) {
     id: videoIds.join(',')
   });
   
-  // Use video details instead of search results for more complete information
-  var mergedResults = videoDetails.items;
-  
-  // Remove the last item from the list
-  if (mergedResults.length > 0) {
-    mergedResults.pop();
-  }
-  
-  return mergedResults;
+  return videoDetails.items;
 }
 
 // Set up a time-based trigger to run this function daily

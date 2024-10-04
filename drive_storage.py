@@ -39,10 +39,13 @@ class DriveStorage:
         # Filter videos shorter than min_duration_seconds
         filtered_df = self.df[self.df['duration_seconds'] > self.min_duration_seconds].copy()
 
+        # Remove duplicates based on video_id, keeping the latest entry
+        filtered_df = filtered_df.drop_duplicates(subset='video_id', keep='first')
+
         # Format the published date to keep only the date part as a string
         filtered_df['published_date'] = pd.to_datetime(filtered_df['published_date']).dt.strftime('%Y-%m-%d')
 
-        logger.info(f"Filtered to {len(filtered_df)} videos (duration > {self.min_duration_seconds} seconds)")
+        logger.info(f"Filtered to {len(filtered_df)} unique videos (duration > {self.min_duration_seconds} seconds)")
 
         # Convert DataFrame to list of dictionaries
         return filtered_df.to_dict('records')
