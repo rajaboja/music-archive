@@ -71,7 +71,54 @@ function initializeSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   if (sheet.getLastRow() <= 1) { // Check if there's only a header or the sheet is empty
     sheet.getRange(1, 1, 1, 5).setValues([['video_id', 'title', 'length', 'published_date', 'description']]);
-    updateSpreadsheet(); // Populate with initial data
+    fetchAllVideos(); // Fetch all available videos
+  }
+}
+
+// Modified function to fetch all available videos
+function fetchAllVideos() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var pageToken;
+  var allVideos = [];
+
+  do {
+    var results = YouTube.Search.list('snippet', {
+      q: SEARCH_QUERY,
+      maxResults: 50, // YouTube API allows max 50 results per request
+      order: 'date',
+      type: 'video',
+      pageToken: pageToken
+    });
+
+    var videoIds = results.items.map(function(item) {
+      return item.id.videoId;
+    });
+
+    var videoDetails = YouTube.Videos.list('snippet,contentDetails', {
+      id: videoIds.join(',')
+    });
+
+    allVideos = allVideos.concat(videoDetails.items);
+    pageToken = results.nextPageToken;
+  } while (pageToken);
+
+  // Prepare data for spreadsheet
+  var data = allVideos.map(function(video) {
+    return [
+      video.id,
+      video.snippet.title,
+      video.contentDetails.duration,
+      video.snippet.publishedAt,
+      video.snippet.description
+    ];
+  });
+
+  // Insert all videos into the spreadsheet
+  if (data.length > 0) {
+    sheet.getRange(2, 1, data.length, 5).setValues(data);
+    Logger.log('Spreadsheet initialized with ' + data.length + ' videos');
+  } else {
+    Logger.log('No videos found');
   }
 }
 
