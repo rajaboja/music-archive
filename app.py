@@ -8,7 +8,6 @@ from starlette.staticfiles import StaticFiles
 
 async def initialize_services():
     try:
-        logger.info("Initializing services")
         playlist_manager = PlaylistManager(
             Config.GOOGLE_DRIVE_FILE_ID, 
             Config.LOCAL_SPREADSHEET_PATH, 
@@ -18,7 +17,6 @@ async def initialize_services():
         youtube_service = YouTubeService()
         await playlist_manager.initialize()
         await youtube_service.initialize()
-        logger.info("Services initialized successfully")
         return playlist_manager, youtube_service
     except Exception as e:
         logger.exception(f"Error initializing services: {e}")
@@ -32,16 +30,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @rt("/")
 async def get(request):
-    logger.info("Handling GET request")
     try:
         if not hasattr(app.state, 'playlist_manager') or not hasattr(app.state, 'youtube_service'):
-            logger.info("Initializing services for the first time")
             playlist_manager, youtube_service = await initialize_services()
             app.state.playlist_manager = playlist_manager
             app.state.youtube_service = youtube_service
-            logger.info("Services initialized and attached to app.state")
-        else:
-            logger.info("Using existing services from app.state")
 
         playlist_manager = request.app.state.playlist_manager
         youtube_service = request.app.state.youtube_service
@@ -52,5 +45,4 @@ async def get(request):
         return Titled("Error", Div("An unexpected error occurred. Please try again later."))
 
 if __name__ == "__main__":
-    logger.info("Starting the application")
     serve()
