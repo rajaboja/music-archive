@@ -2,7 +2,9 @@ name: Deploy Google Apps Script
 
 on:
   push:
-    branches: [master]
+    branches: [main]
+    paths:
+      - 'apps_script/**'
 
 jobs:
   deploy:
