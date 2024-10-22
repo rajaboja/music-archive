@@ -1,7 +1,7 @@
 // Google Apps Script to fetch T M Krishna's latest YouTube videos using a general search and update the spreadsheet
 
 const SEARCH_QUERY = 'T M Krishna';
-const MAX_RESULTS = 50; // Number of videos to fetch
+const MAX_RESULTS = 50; 
 
 function updateSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
