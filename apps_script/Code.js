@@ -44,7 +44,8 @@ function getLatestVideos(lastVideoDate) {
     maxResults: MAX_RESULTS,
     order: 'date',
     type: 'video',
-    publishedAfter: lastVideoDate.toISOString()
+    publishedAfter: lastVideoDate.toISOString(),
+    videoEmbeddable: true
   });
   
   var videoIds = results.items.map(function(item) {
@@ -84,9 +85,10 @@ function fetchAllVideos() {
   do {
     var results = YouTube.Search.list('snippet', {
       q: SEARCH_QUERY,
-      maxResults: 50, // YouTube API allows max 50 results per request
+      maxResults: MAX_RESULTS,
       order: 'date',
       type: 'video',
+      videoEmbeddable: true,
       pageToken: pageToken
     });
 
