@@ -9,7 +9,6 @@ function updateSpreadsheet() {
   var newVideos = getLatestVideos(lastVideoDate);
   
   if (newVideos.length > 0) {
-    // Insert new videos at the top of the content
     var headerRow = 1;
     sheet.insertRowsAfter(headerRow, newVideos.length);
     var data = newVideos.map(function(video) {
@@ -18,10 +17,11 @@ function updateSpreadsheet() {
         video.snippet.title,
         video.contentDetails.duration,
         video.snippet.publishedAt,
-        video.snippet.description
+        video.snippet.description,
+        video.snippet.categoryId // Add category ID
       ];
     });
-    sheet.getRange(headerRow + 1, 1, data.length, 5).setValues(data);
+    sheet.getRange(headerRow + 1, 1, data.length, 6).setValues(data);
     
     Logger.log('Spreadsheet updated successfully with ' + newVideos.length + ' new videos');
   } else {
@@ -70,9 +70,9 @@ function createTimeDrivenTrigger() {
 // Initialize the spreadsheet if it's empty
 function initializeSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  if (sheet.getLastRow() <= 1) { // Check if there's only a header or the sheet is empty
-    sheet.getRange(1, 1, 1, 5).setValues([['video_id', 'title', 'length', 'published_date', 'description']]);
-    fetchAllVideos(); // Fetch all available videos
+  if (sheet.getLastRow() <= 1) {
+    sheet.getRange(1, 1, 1, 6).setValues([['video_id', 'title', 'length', 'published_date', 'description', 'category_id']]);
+    fetchAllVideos();
   }
 }
 
@@ -111,13 +111,14 @@ function fetchAllVideos() {
       video.snippet.title,
       video.contentDetails.duration,
       video.snippet.publishedAt,
-      video.snippet.description
+      video.snippet.description,
+      video.snippet.categoryId // Add category ID
     ];
   });
 
   // Insert all videos into the spreadsheet
   if (data.length > 0) {
-    sheet.getRange(2, 1, data.length, 5).setValues(data);
+    sheet.getRange(2, 1, data.length, 6).setValues(data);
     Logger.log('Spreadsheet initialized with ' + data.length + ' videos');
   } else {
     Logger.log('No videos found');
