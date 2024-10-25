@@ -101,7 +101,7 @@ function initializeSpreadsheet() {
   }
 }
 
-// Modified function to fetch all available videos
+// Modified function to fetch all available videos without date ordering
 function fetchAllVideos() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var pageToken;
@@ -112,7 +112,6 @@ function fetchAllVideos() {
     var results = YouTube.Search.list('snippet', {
       q: SEARCH_QUERY,
       maxResults: MAX_RESULTS,
-      order: 'date',
       type: 'video',
       videoEmbeddable: true,
       pageToken: pageToken
@@ -129,6 +128,9 @@ function fetchAllVideos() {
     allVideos = allVideos.concat(videoDetails.items);
     pageToken = results.nextPageToken;
   } while (pageToken);
+
+  // Sort videos by publishedAt date in descending order
+  allVideos.sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt));
 
   // Prepare data for spreadsheet
   var data = allVideos.map(function(video) {
