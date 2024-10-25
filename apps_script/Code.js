@@ -2,11 +2,13 @@
 
 const SEARCH_QUERY = 'T M Krishna';
 const MAX_RESULTS = 50; 
+const CATEGORY_CACHE_KEY = 'VIDEO_CATEGORIES';
 
 function updateSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var lastVideoDate = getLastVideoDate(sheet);
   var newVideos = getLatestVideos(lastVideoDate);
+  var categories = getVideoCategories();
   
   if (newVideos.length > 0) {
     var headerRow = 1;
@@ -18,10 +20,11 @@ function updateSpreadsheet() {
         video.contentDetails.duration,
         video.snippet.publishedAt,
         video.snippet.description,
-        video.snippet.categoryId // Add category ID
+        video.snippet.categoryId,
+        categories[video.snippet.categoryId] || 'Unknown' // Add category name
       ];
     });
-    sheet.getRange(headerRow + 1, 1, data.length, 6).setValues(data);
+    sheet.getRange(headerRow + 1, 1, data.length, 7).setValues(data);
     
     Logger.log('Spreadsheet updated successfully with ' + newVideos.length + ' new videos');
   } else {
@@ -59,6 +62,28 @@ function getLatestVideos(lastVideoDate) {
   return videoDetails.items;
 }
 
+// Add this function to fetch and cache video categories
+function getVideoCategories() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get(CATEGORY_CACHE_KEY);
+  
+  if (cached != null) {
+    return JSON.parse(cached);
+  }
+  
+  var categories = {};
+  var response = YouTube.VideoCategories.list('snippet', {
+    regionCode: 'US'  // You can change this to the appropriate region code
+  });
+  
+  response.items.forEach(function(item) {
+    categories[item.id] = item.snippet.title;
+  });
+  
+  cache.put(CATEGORY_CACHE_KEY, JSON.stringify(categories), 21600); // Cache for 6 hours
+  return categories;
+}
+
 // Set up a time-based trigger to run this function daily
 function createTimeDrivenTrigger() {
   ScriptApp.newTrigger('updateSpreadsheet')
@@ -71,7 +96,7 @@ function createTimeDrivenTrigger() {
 function initializeSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   if (sheet.getLastRow() <= 1) {
-    sheet.getRange(1, 1, 1, 6).setValues([['video_id', 'title', 'length', 'published_date', 'description', 'category_id']]);
+    sheet.getRange(1, 1, 1, 7).setValues([['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name']]);
     fetchAllVideos();
   }
 }
@@ -81,6 +106,7 @@ function fetchAllVideos() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var pageToken;
   var allVideos = [];
+  var categories = getVideoCategories();
 
   do {
     var results = YouTube.Search.list('snippet', {
@@ -112,13 +138,14 @@ function fetchAllVideos() {
       video.contentDetails.duration,
       video.snippet.publishedAt,
       video.snippet.description,
-      video.snippet.categoryId // Add category ID
+      video.snippet.categoryId,
+      categories[video.snippet.categoryId] || 'Unknown' // Add category name
     ];
   });
 
   // Insert all videos into the spreadsheet
   if (data.length > 0) {
-    sheet.getRange(2, 1, data.length, 6).setValues(data);
+    sheet.getRange(2, 1, data.length, 7).setValues(data);
     Logger.log('Spreadsheet initialized with ' + data.length + ' videos');
   } else {
     Logger.log('No videos found');
