@@ -32,7 +32,6 @@ class YouTubeService:
             'loop': '1',
             'enablejsapi': '1',
             'rel': '0',
-            'modestbranding': '1',
             'controls': '1',
             'showinfo': '0',
         }
