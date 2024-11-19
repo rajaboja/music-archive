@@ -16,6 +16,11 @@ function updateSpreadsheetDaily() {
   var categories = getVideoCategories();
   
   if (allVideos.length > 0) {
+    // Sort videos by publishedAt date in descending order (newest first)
+    allVideos.sort(function(a, b) {
+      return new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt);
+    });
+    
     var data = allVideos.map(function(video) {
       return [
         video.id,
