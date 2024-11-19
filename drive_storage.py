@@ -28,7 +28,7 @@ class DriveStorage:
     def load_playlist(self):
         if self.df is None:
             raise Exception("Sheet not downloaded. Call download_sheet() first.")
-
+        self.df = self.df.dropna(subset='length')
         self.df['duration_seconds'] = self.df['length'].apply(self.parse_duration)
         filtered_df = self.df[self.df['duration_seconds'] > self.min_duration_seconds].copy()
         filtered_df = filtered_df.drop_duplicates(subset='video_id', keep='first')
