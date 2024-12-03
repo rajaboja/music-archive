@@ -33,6 +33,9 @@ class DriveStorage:
         self.df = self.df.dropna(subset='length')
         logger.debug(f"Dropped {initial_count - len(self.df)} rows with empty length values")
         
+        self.df = self.df[self.df['is_music_video'] == True].copy()
+        logger.info(f"Filtered to keep only music videos. {len(self.df)} videos remaining")
+        
         self.df['duration_seconds'] = self.df['length'].apply(self.parse_duration)
         filtered_df = self.df[self.df['duration_seconds'] > self.min_duration_seconds].copy()
         logger.info(f"Filtered {len(self.df) - len(filtered_df)} videos shorter than {self.min_duration_seconds} seconds")
