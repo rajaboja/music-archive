@@ -64,16 +64,24 @@ function classifyVideosWithGemini(videos) {
     const url = `https://generativelanguage.googleapis.com/${CONFIG.API_VERSION}/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
     
     // Format videos for the prompt
-    const formattedVideos = videos.map((video, index) => {
-        return `Video ${index + 1}:
-        ID: ${video[0]}
-        Title: ${video[1]}
-        Description: ${video[4]}`
-    }).join('\n\n');
+    const formattedVideos = videos.map(video => {
+        return `<video>
+            <id>${video[0]}</id>
+            <title>${video[1]}</title>
+            <description>${video[4]}</description>
+        </video>`
+    }).join('\n\n');  // Use separator between videos
     
-    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.
+    const prompt = `<task>Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.</task>
 
-${formattedVideos}`;
+<videos>
+${formattedVideos}
+</videos>
+
+<guidelines>
+- TRUE: Videos where T.M.Krishna is performing music (concerts, recordings, music videos)
+- FALSE: All other content (lectures, interviews, non-musical content)
+</guidelines>`;
     
     const responseSchema = {
         type: "array",
@@ -86,7 +94,7 @@ ${formattedVideos}`;
                 },
                 is_music: {
                     type: "boolean",
-                    description: "true if the video is music-related, false otherwise"
+                    description: "true if the video is a music performance by T.M.Krishna, false otherwise"
                 }
             },
             required: ["video_id", "is_music"]
