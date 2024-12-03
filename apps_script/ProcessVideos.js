@@ -125,18 +125,57 @@ Guidelines for classification:
       return duration >= CONFIG.MIN_DURATION_SECONDS && !processedVideoIds.has(video[0]);
     });
     
+    const unclassifiedVideos = new Set(); // Track videos that need retry
+    
+    // First pass: Process all videos
     for (let i = 0; i < eligibleVideos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
       const videoBatch = eligibleVideos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
       const classifications = classifyVideosWithGemini(videoBatch);
       
       if (classifications) {
-        classifications.forEach(classification => {
-          const video = videoBatch.find(v => v[0] === classification.video_id);
-          if (video) {
-            // Store all classified videos with their classification
+        // Track which videos were classified
+        const classifiedIds = new Set(classifications.map(c => c.video_id));
+        
+        // Store classifications and track unclassified videos
+        videoBatch.forEach(video => {
+          const videoId = video[0];
+          const classification = classifications.find(c => c.video_id === videoId);
+          
+          if (classification) {
             processedSheet.appendRow([...video, classification.is_music]);
+          } else {
+            unclassifiedVideos.add(videoId);
           }
         });
+      } else {
+        // If classification failed entirely, add all videos to retry
+        videoBatch.forEach(video => unclassifiedVideos.add(video[0]));
+      }
+    }
+    
+    // Second pass: Retry unclassified videos
+    if (unclassifiedVideos.size > 0) {
+      Logger.log(`Retrying classification for ${unclassifiedVideos.size} videos`);
+      
+      const videosToRetry = eligibleVideos.filter(video => unclassifiedVideos.has(video[0]));
+      
+      // Process retry batch
+      for (let i = 0; i < videosToRetry.length; i += CONFIG.VIDEOS_PER_REQUEST) {
+        const retryBatch = videosToRetry.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+        const classifications = classifyVideosWithGemini(retryBatch);
+        
+        if (classifications) {
+          retryBatch.forEach(video => {
+            const classification = classifications.find(c => c.video_id === video[0]);
+            // Store with classification if available, null if still missing
+            processedSheet.appendRow([...video, classification ? classification.is_music : null]);
+          });
+        } else {
+          // If retry failed, store all with null classification
+          retryBatch.forEach(video => {
+            processedSheet.appendRow([...video, null]);
+          });
+        }
       }
     }
   }
