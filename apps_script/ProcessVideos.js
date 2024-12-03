@@ -2,8 +2,7 @@
 const CONFIG = {
     SOURCE_SHEET_NAME: 'Raw Videos',
     PROCESSED_SHEET_NAME: 'Processed Videos',
-    BATCH_SIZE: 15,
-    WAIT_TIME: 65000,
+    VIDEOS_PER_REQUEST: 50,
     MIN_DURATION_SECONDS: 120,
     GEMINI_MODEL: 'gemini-1.5-flash-8b',
     API_VERSION: 'v1beta'
@@ -40,50 +39,69 @@ const CONFIG = {
     return hours * 3600 + minutes * 60 + seconds;
   }
   
-  function classifyVideoWithGemini(title, description) {
+  function classifyVideosWithGemini(videos) {
     const apiKey = PropertiesService.getScriptProperties().getProperty('GOOGLE_API_KEY');
     const url = `https://generativelanguage.googleapis.com/${CONFIG.API_VERSION}/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
     
-    const prompt = `Analyze this YouTube video's title and description and classify if it's a music video/performance or not.
+    // Format videos for the prompt
+    const formattedVideos = videos.map((video, index) => {
+      return `Video ${index + 1}:
+      ID: ${video[0]}
+      Title: ${video[1]}
+      Description: ${video[4]}`
+    }).join('\n\n');
     
-    Title: ${title}
-    Description: ${description}
+    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance or not.
+
+${formattedVideos}
+
+Guidelines for classification:
+- Music: music performances, concerts, songs, music videos, live performances
+- Non-music: lectures, interviews, talks, discussions, tutorials`;
     
-    Respond in this exact format:
-    <CLASSIFICATION>MUSIC</CLASSIFICATION> or <CLASSIFICATION>NON_MUSIC</CLASSIFICATION>
-    
-    Guidelines:
-    - MUSIC: If it's a music performance, concert, song, or music-related content
-    - NON_MUSIC: If it's a lecture, interview, talk, discussion, or non-musical content`;
+    const responseSchema = {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          video_id: {
+            type: "string",
+            description: "The ID of the YouTube video"
+          },
+          is_music: {
+            type: "boolean",
+            description: "true if the video is music-related, false otherwise"
+          }
+        },
+        required: ["video_id", "is_music"]
+      }
+    };
     
     const requestBody = {
       contents: [{
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema
+      }
     };
     
     const options = {
       'method': 'post',
       'contentType': 'application/json',
-      'payload': JSON.stringify(requestBody)
+      'payload': JSON.stringify(requestBody),
+      'muteHttpExceptions': true
     };
     
     try {
       const response = JSON.parse(UrlFetchApp.fetch(url, options));
       const result = response.candidates[0].content.parts[0].text.trim();
-      
-      // Extract classification from XML-like tags
-      const match = result.match(/<CLASSIFICATION>(MUSIC|NON_MUSIC)<\/CLASSIFICATION>/);
-      if (!match) {
-        Logger.log(`Invalid classification format received: ${result}`);
-        return null;
-      }
-      
-      return match[1] === 'MUSIC';
+      return JSON.parse(result);
     } catch (error) {
-      Logger.log(`Error classifying video: ${error}`);
+      Logger.log(`Error classifying videos batch: ${error}`);
       return null;
     }
   }
@@ -101,38 +119,26 @@ const CONFIG = {
     const sourceData = sourceSheet.getDataRange().getValues();
     const videos = sourceData.slice(1);
     
-    // Process videos in batches
-    for (let i = 0; i < videos.length; i += CONFIG.BATCH_SIZE) {
-      const batch = videos.slice(i, i + CONFIG.BATCH_SIZE);
-      processBatch(batch, processedSheet, processedVideoIds);
+    // Filter videos less than 2 minutes and not already processed
+    const eligibleVideos = videos.filter(video => {
+      const duration = parseISO8601Duration(video[2]);
+      return duration >= CONFIG.MIN_DURATION_SECONDS && !processedVideoIds.has(video[0]);
+    });
+    
+    for (let i = 0; i < eligibleVideos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
+      const videoBatch = eligibleVideos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+      const classifications = classifyVideosWithGemini(videoBatch);
       
-      if (i + CONFIG.BATCH_SIZE < videos.length) {
-        Utilities.sleep(CONFIG.WAIT_TIME);
+      if (classifications) {
+        classifications.forEach(classification => {
+          const video = videoBatch.find(v => v[0] === classification.video_id);
+          if (video) {
+            // Store all classified videos with their classification
+            processedSheet.appendRow([...video, classification.is_music]);
+          }
+        });
       }
     }
-  }
-  
-  function processBatch(batch, processedSheet, processedVideoIds) {
-    batch.forEach(async function(video) {
-      const videoId = video[0];
-      const duration = video[2];
-      
-      // Skip if already processed or too short
-      if (processedVideoIds.has(videoId) || parseISO8601Duration(duration) < CONFIG.MIN_DURATION_SECONDS) {
-        return;
-      }
-      
-      const isMusicVideo = classifyVideoWithGemini(video[1], video[4]);
-      if (isMusicVideo === null) {
-        Logger.log(`Skipping video ${videoId} due to classification error`);
-        return;
-      }
-      
-      // Only add music videos
-      if (isMusicVideo) {
-        processedSheet.appendRow([...video, true]);
-      }
-    });
   }
   
   function createDailyProcessingTrigger() {
