@@ -29,9 +29,12 @@ function setupProcessedSheet() {
     const spreadsheet = SpreadsheetApp.openById(CONFIG.SHEETS.PROCESSED.ID);
     let sheet = spreadsheet.getSheets()[0];  // Get first sheet
     
-    if (!sheet) {
-        sheet = spreadsheet.insertSheet();
-        sheet.getRange(1, 1, 1, 8).setValues([[
+    // Check if header row exists
+    const headerRange = sheet.getRange(1, 1, 1, 8);
+    const headerValues = headerRange.getValues()[0];
+    
+    if (!headerValues[0]) { // If first cell is empty, set headers
+        headerRange.setValues([[
             'video_id', 
             'title', 
             'length', 
@@ -68,13 +71,9 @@ function classifyVideosWithGemini(videos) {
         Description: ${video[4]}`
     }).join('\n\n');
     
-    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance or not.
+    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.
 
-${formattedVideos}
-
-Guidelines for classification:
-- Music: music performances, concerts, songs, music videos, live performances
-- Non-music: lectures, interviews, talks, discussions, tutorials`;
+${formattedVideos}`;
     
     const responseSchema = {
         type: "array",
@@ -195,6 +194,16 @@ function processVideos() {
                 });
             }
         }
+    }
+    
+    // After all processing is complete, sort the processed sheet
+    const lastRow = processedSheet.getLastRow();
+    if (lastRow > 1) {  // Only sort if there's data beyond the header
+        const range = processedSheet.getRange(2, 1, lastRow - 1, 8);  // Exclude header row
+        range.sort({
+            column: 4,  // published_date column
+            ascending: false
+        });
     }
 }
   
