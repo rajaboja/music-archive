@@ -1,27 +1,27 @@
 # Python
-__pycache__/
+__pycache__
 *.pyc
 app.log
 
 # Development and Version Control
-.git/
-.github/
+.git
+.github
 .gitignore
 
 
 # Google Apps Script
-apps_script/
+apps_script
 
 # Deprecated
-deprecated/
+deprecated
 
 # Environment and Config
 .env
 .env*.local
 
 # IDE
-.vscode/
-.idea/
+.vscode
+.idea
 
 # Vercel
-.vercel/ 
+.vercel
