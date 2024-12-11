@@ -26,15 +26,13 @@ jobs:
     # Deploy ProcessVideos.js
     - name: Create .clasp.json for ProcessVideos
       run: |
-        echo '${{ secrets.CLASP_JSON_PROCESS_VIDEOS }}' > apps_script/.clasp.json
+        echo '${{ secrets.CLASP_JSON_PROCESS_VIDEOS }}' > .clasp.json
     - name: Deploy ProcessVideos with clasp
-      working-directory: apps_script
       run: clasp push -f ProcessVideos.js
 
     # Deploy Code_v2.js
     - name: Create .clasp.json for Code_v2
       run: |
-        echo '${{ secrets.CLASP_JSON }}' > apps_script/.clasp.json
+        echo '${{ secrets.CLASP_JSON }}' > .clasp.json
     - name: Deploy Code_v2 with clasp
-      working-directory: apps_script
       run: clasp push -f Code.js
