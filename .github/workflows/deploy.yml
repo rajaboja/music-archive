@@ -37,4 +37,4 @@ jobs:
         echo '${{ secrets.CLASP_JSON }}' > apps_script/.clasp.json
     - name: Deploy Code_v2 with clasp
       working-directory: apps_script
-      run: clasp push -f Code_v2.js
+      run: clasp push -f Code.js
