@@ -66,9 +66,9 @@ function classifyVideosWithGemini(videos) {
     // Format videos for the prompt
     const formattedVideos = videos.map(video => {
         return `<video>
-            <id>${video[0]}</id>
-            <title>${video[1]}</title>
-            <description>${video[4]}</description>
+            ID: ${video[0]}
+            Title: ${video[1]}
+            Description: ${video[4]}
         </video>`
     }).join('\n\n');  // Use separator between videos
     
