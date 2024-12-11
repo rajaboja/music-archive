@@ -72,7 +72,7 @@ function classifyVideosWithGemini(videos) {
         </video>`
     }).join('\n\n');  // Use separator between videos
     
-    const prompt = `<task>Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.</task>
+    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.
 
 <videos>
 ${formattedVideos}
