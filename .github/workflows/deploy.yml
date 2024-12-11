@@ -30,13 +30,13 @@ jobs:
         echo '${{ secrets.CLASP_JSON_PROCESS_VIDEOS }}' > .clasp.json
     - name: Deploy ProcessVideos with clasp
       working-directory: apps_script
-      run: clasp push -f ProcessVideos.js
+      run: clasp push --force "ProcessVideos.js" "appsscript.json"
 
-    # Deploy Code_v2.js
-    - name: Create .clasp.json for Code_v2
+    # Deploy Code.js
+    - name: Create .clasp.json for Code.js
       working-directory: apps_script
       run: |
         echo '${{ secrets.CLASP_JSON }}' > .clasp.json
     - name: Deploy Code_v2 with clasp
       working-directory: apps_script
-      run: clasp push -f Code.js
+      run: clasp push --force "Code.js" "appsscript.json"
