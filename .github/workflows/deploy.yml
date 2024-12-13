@@ -23,20 +23,11 @@ jobs:
       run: |
         echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
 
-    # Deploy ProcessVideos.js
-    - name: Create .clasp.json for ProcessVideos
-      working-directory: apps_script
-      run: |
-        echo '${{ secrets.CLASP_JSON_PROCESS_VIDEOS }}' > .clasp.json
-    - name: Deploy ProcessVideos with clasp
-      working-directory: apps_script
-      run: clasp push --force "ProcessVideos.js" "appsscript.json"
 
-    # Deploy Code.js
-    - name: Create .clasp.json for Code.js
+    - name: Create .clasp.json 
       working-directory: apps_script
       run: |
         echo '${{ secrets.CLASP_JSON }}' > .clasp.json
-    - name: Deploy Code_v2 with clasp
+    - name: Deploy scripts
       working-directory: apps_script
-      run: clasp push --force "Code.js" "appsscript.json"
+      run: clasp push 
