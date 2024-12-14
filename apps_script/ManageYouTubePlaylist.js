@@ -5,11 +5,7 @@ const CONFIG = {
         NAME: "T.M. Krishna Music Performances",
         DESCRIPTION: "A curated playlist of T.M. Krishna's music performances, concerts, and recordings. Updated daily."
     },
-    SHEETS: {
-        PROCESSED: {
-            ID: null
-        }
-    },
+    SHEET_ID: null,
     BATCH_SIZE: 50  // YouTube API batch request limit
 };
 
@@ -20,7 +16,7 @@ function setup() {
         
         // Check if properties are already set
         const existingPlaylistId = scriptProperties.getProperty('YOUTUBE_PLAYLIST_ID');
-        const existingSheetId = scriptProperties.getProperty('PROCESSED_SHEET_ID');
+        const existingSheetId = scriptProperties.getProperty('PROCESSED_SPREADSHEET_ID');
         
         if (!existingPlaylistId) {
             // Create new playlist
@@ -29,7 +25,7 @@ function setup() {
         }
         
         if (!existingSheetId) {
-            throw new Error('PROCESSED_SHEET_ID not configured. Please set this property manually.');
+            throw new Error('PROCESSED_SPREADSHEET_ID not configured. Please set this property manually.');
         }
         
         // Create daily sync trigger
@@ -45,9 +41,9 @@ function setup() {
 function loadConfig() {
     const properties = PropertiesService.getScriptProperties();
     CONFIG.PLAYLIST.ID = properties.getProperty('YOUTUBE_PLAYLIST_ID');
-    CONFIG.SHEETS.PROCESSED.ID = properties.getProperty('PROCESSED_SHEET_ID');
+    CONFIG.SHEET_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
 
-    if (!CONFIG.PLAYLIST.ID || !CONFIG.SHEETS.PROCESSED.ID) {
+    if (!CONFIG.PLAYLIST.ID || !CONFIG.SHEET_ID) {
         throw new Error('Required configuration missing. Please run setup() first.');
     }
 }
@@ -69,14 +65,13 @@ function addVideoToPlaylist(videoId) {
 function syncToYouTubePlaylist() {
     loadConfig();
     
-    const processedSheet = SpreadsheetApp.openById(CONFIG.SHEETS.PROCESSED.ID)
+    const processedSheet = SpreadsheetApp.openById(CONFIG.SHEET_ID)
         .getSheets()[0];
     
     const data = processedSheet.getDataRange().getValues();
     const musicVideos = data.slice(1)  // Skip header
         .filter(row => row[7] === true);  // Only music videos
     
-    // Process videos in batches
     for (let i = 0; i < musicVideos.length; i += CONFIG.BATCH_SIZE) {
         const batch = musicVideos.slice(i, i + CONFIG.BATCH_SIZE);
         
