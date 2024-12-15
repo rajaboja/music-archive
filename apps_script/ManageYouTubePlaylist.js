@@ -5,7 +5,7 @@ const PLAYLIST_CONFIG = {
         NAME: "T.M. Krishna Music Performances",
         DESCRIPTION: "A curated playlist of T.M. Krishna's music performances, concerts, and recordings. Updated daily."
     },
-    SHEET_ID: null,
+    SHEET_ID: PropertiesService.getScriptProperties().getProperty('PROCESSED_SPREADSHEET_ID'),
     BATCH_SIZE: 50  // YouTube API batch request limit
 };
 
