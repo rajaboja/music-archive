@@ -1,5 +1,5 @@
 // Configuration management
-const CONFIG = {
+const PLAYLIST_CONFIG = {
     PLAYLIST: {
         ID: null,
         NAME: "T.M. Krishna Music Performances",
@@ -40,10 +40,10 @@ function setup() {
 
 function loadConfig() {
     const properties = PropertiesService.getScriptProperties();
-    CONFIG.PLAYLIST.ID = properties.getProperty('YOUTUBE_PLAYLIST_ID');
-    CONFIG.SHEET_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
+    PLAYLIST_CONFIG.PLAYLIST.ID = properties.getProperty('YOUTUBE_PLAYLIST_ID');
+    PLAYLIST_CONFIG.SHEET_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
 
-    if (!CONFIG.PLAYLIST.ID || !CONFIG.SHEET_ID) {
+    if (!PLAYLIST_CONFIG.PLAYLIST.ID || !PLAYLIST_CONFIG.SHEET_ID) {
         throw new Error('Required configuration missing. Please run setup() first.');
     }
 }
@@ -51,7 +51,7 @@ function loadConfig() {
 function addVideoToPlaylist(videoId) {
     const playlistItem = {
         snippet: {
-            playlistId: CONFIG.PLAYLIST.ID,
+            playlistId: PLAYLIST_CONFIG.PLAYLIST.ID,
             resourceId: {
                 kind: 'youtube#video',
                 videoId: videoId
@@ -65,15 +65,15 @@ function addVideoToPlaylist(videoId) {
 function syncToYouTubePlaylist() {
     loadConfig();
     
-    const processedSheet = SpreadsheetApp.openById(CONFIG.SHEET_ID)
+    const processedSheet = SpreadsheetApp.openById(PLAYLIST_CONFIG.SHEET_ID)
         .getSheets()[0];
     
     const data = processedSheet.getDataRange().getValues();
     const musicVideos = data.slice(1)  // Skip header
         .filter(row => row[7] === true);  // Only music videos
     
-    for (let i = 0; i < musicVideos.length; i += CONFIG.BATCH_SIZE) {
-        const batch = musicVideos.slice(i, i + CONFIG.BATCH_SIZE);
+    for (let i = 0; i < musicVideos.length; i += PLAYLIST_CONFIG.BATCH_SIZE) {
+        const batch = musicVideos.slice(i, i + PLAYLIST_CONFIG.BATCH_SIZE);
         
         batch.forEach(video => {
             try {
@@ -90,8 +90,8 @@ function createPlaylist() {
     try {
         const playlist = {
             snippet: {
-                title: CONFIG.PLAYLIST.NAME,
-                description: CONFIG.PLAYLIST.DESCRIPTION
+                title: PLAYLIST_CONFIG.PLAYLIST.NAME,
+                description: PLAYLIST_CONFIG.PLAYLIST.DESCRIPTION
             },
             status: {
                 privacyStatus: 'private'
