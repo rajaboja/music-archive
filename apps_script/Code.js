@@ -126,7 +126,7 @@ function createDailyTrigger() {
   Logger.log('Daily trigger created successfully');
 }
 
-function setup() {
+function setupSourceSheet() {
   initializeSpreadsheet();
   createDailyTrigger();
 } 

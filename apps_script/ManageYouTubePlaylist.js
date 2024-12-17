@@ -69,7 +69,7 @@ function syncToYouTubePlaylist() {
   });
 }
 
-function setup() {
+function setupPlaylist() {
   if (!props.getProperty('PLAYLIST_ID')) createPlaylist();
   if (!props.getProperty('PROCESSED_SPREADSHEET_ID')) throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
   

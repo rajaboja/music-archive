@@ -295,7 +295,7 @@ function createDailyProcessingTrigger() {
     Logger.log('Daily processing trigger created successfully');
 }
   
-function setup() {
+function setupProcessing() {
     // Verify spreadsheet IDs are configured
     loadConfig();
     
