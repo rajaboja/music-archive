@@ -3,11 +3,15 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '*.md'
+      - '.gitignore'
+      - 'apps_script/**'
+
   pull_request:
     branches: [ master ]
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
