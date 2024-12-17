@@ -155,30 +155,53 @@ ${formattedVideos}
   
 function processVideos() {
     loadConfig();
-    const sourceSheet = SpreadsheetApp.openById(CONFIG.SHEETS.SOURCE.ID)
-        .getSheets()[0];
+    const sourceSheet = SpreadsheetApp.openById(CONFIG.SHEETS.SOURCE.ID).getSheets()[0];
     const processedSheet = setupProcessedSheet();
     
-    // Get existing processed video IDs
+    try {
+        // Get data from sheets
+        const processedVideoIds = getProcessedVideoIds(processedSheet);
+        const eligibleVideos = getEligibleVideos(sourceSheet, processedVideoIds);
+        
+        // Split videos into matching and non-matching
+        const { matchingVideos, nonMatchingVideos } = categorizeVideos(eligibleVideos);
+        
+        // Process non-matching videos (automatically marked as non-music)
+        processNonMatchingVideos(processedSheet, nonMatchingVideos);
+        
+        // Process matching videos through Gemini
+        processMatchingVideos(processedSheet, matchingVideos);
+        
+        // Sort the processed sheet by date
+        sortProcessedSheet(processedSheet);
+        
+    } catch (error) {
+        Logger.log(`Error in processVideos: ${error.message}`);
+        throw error;
+    }
+}
+  
+function getProcessedVideoIds(processedSheet) {
     const processedData = processedSheet.getDataRange().getValues();
-    const processedVideoIds = new Set(processedData.slice(1).map(row => row[0]));
-    
-    // Get source data
+    return new Set(processedData.slice(1).map(row => row[0]));
+}
+  
+function getEligibleVideos(sourceSheet, processedVideoIds) {
     const sourceData = sourceSheet.getDataRange().getValues();
     const videos = sourceData.slice(1);
     
-    // First filter for duration and unprocessed videos
-    const eligibleVideos = videos.filter(video => {
+    return videos.filter(video => {
         const duration = parseISO8601Duration(video[2]);
         return duration >= CONFIG.MIN_DURATION_SECONDS && 
                !processedVideoIds.has(video[0]);
     });
-    
-    // Separate videos based on pattern match
+}
+  
+function categorizeVideos(videos) {
     const matchingVideos = [];
     const nonMatchingVideos = [];
     
-    eligibleVideos.forEach(video => {
+    videos.forEach(video => {
         if (matchesPattern(video)) {
             matchingVideos.push(video);
         } else {
@@ -186,69 +209,70 @@ function processVideos() {
         }
     });
     
-    // Add non-matching videos to sheet with is_music = false
-    nonMatchingVideos.forEach(video => {
+    return { matchingVideos, nonMatchingVideos };
+}
+  
+function processNonMatchingVideos(processedSheet, videos) {
+    videos.forEach(video => {
         processedSheet.appendRow([...video, false]);
     });
+    Logger.log(`Processed ${videos.length} non-matching videos`);
+}
+  
+function processMatchingVideos(processedSheet, videos) {
+    const unclassifiedVideos = new Set();
     
-    const unclassifiedVideos = new Set(); // Track videos that need retry
-    
-    // Process only matching videos with Gemini
-    for (let i = 0; i < matchingVideos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
-        const videoBatch = matchingVideos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
-        const classifications = classifyVideosWithGemini(videoBatch);
-        
-        if (classifications) {
-            // Track which videos were classified
-            const classifiedIds = new Set(classifications.map(c => c.video_id));
-            
-            // Store classifications and track unclassified videos
-            videoBatch.forEach(video => {
-                const videoId = video[0];
-                const classification = classifications.find(c => c.video_id === videoId);
-                
-                if (classification) {
-                    processedSheet.appendRow([...video, classification.is_music]);
-                } else {
-                    unclassifiedVideos.add(videoId);
-                }
-            });
-        } else {
-            // If classification failed entirely, add all videos to retry
-            videoBatch.forEach(video => unclassifiedVideos.add(video[0]));
-        }
+    // First pass: Process all videos
+    for (let i = 0; i < videos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
+        const videoBatch = videos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+        processVideoBatch(processedSheet, videoBatch, unclassifiedVideos);
     }
     
     // Second pass: Retry unclassified videos
     if (unclassifiedVideos.size > 0) {
         Logger.log(`Retrying classification for ${unclassifiedVideos.size} videos`);
-        
-        const videosToRetry = matchingVideos.filter(video => unclassifiedVideos.has(video[0]));
-        
-        // Process retry batch
-        for (let i = 0; i < videosToRetry.length; i += CONFIG.VIDEOS_PER_REQUEST) {
-            const retryBatch = videosToRetry.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
-            const classifications = classifyVideosWithGemini(retryBatch);
-            
-            if (classifications) {
-                retryBatch.forEach(video => {
-                    const classification = classifications.find(c => c.video_id === video[0]);
-                    // Store with classification if available, null if still missing
-                    processedSheet.appendRow([...video, classification ? classification.is_music : null]);
-                });
-            } else {
-                // If retry failed, store all with null classification
-                retryBatch.forEach(video => {
-                    processedSheet.appendRow([...video, null]);
-                });
-            }
-        }
+        const videosToRetry = videos.filter(video => unclassifiedVideos.has(video[0]));
+        processRetryBatch(processedSheet, videosToRetry);
     }
+}
+  
+function processVideoBatch(processedSheet, videoBatch, unclassifiedVideos) {
+    const classifications = classifyVideosWithGemini(videoBatch);
     
-    // After all processing is complete, sort the processed sheet
+    if (classifications) {
+        const classifiedIds = new Set(classifications.map(c => c.video_id));
+        
+        videoBatch.forEach(video => {
+            const videoId = video[0];
+            const classification = classifications.find(c => c.video_id === videoId);
+            
+            if (classification) {
+                processedSheet.appendRow([...video, classification.is_music]);
+            } else {
+                unclassifiedVideos.add(videoId);
+            }
+        });
+    } else {
+        videoBatch.forEach(video => unclassifiedVideos.add(video[0]));
+    }
+}
+  
+function processRetryBatch(processedSheet, videosToRetry) {
+    for (let i = 0; i < videosToRetry.length; i += CONFIG.VIDEOS_PER_REQUEST) {
+        const retryBatch = videosToRetry.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+        const classifications = classifyVideosWithGemini(retryBatch);
+        
+        retryBatch.forEach(video => {
+            const classification = classifications?.find(c => c.video_id === video[0]);
+            processedSheet.appendRow([...video, classification ? classification.is_music : null]);
+        });
+    }
+}
+  
+function sortProcessedSheet(processedSheet) {
     const lastRow = processedSheet.getLastRow();
-    if (lastRow > 1) {  // Only sort if there's data beyond the header
-        const range = processedSheet.getRange(2, 1, lastRow - 1, 8);  // Exclude header row
+    if (lastRow > 1) {
+        const range = processedSheet.getRange(2, 1, lastRow - 1, 8);
         range.sort({
             column: 4,  // published_date column
             ascending: false
