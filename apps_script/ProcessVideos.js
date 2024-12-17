@@ -4,6 +4,7 @@ const CONFIG = {
     MIN_DURATION_SECONDS: 120,
     GEMINI_MODEL: 'gemini-1.5-flash-8b',
     API_VERSION: 'v1beta',
+    MAX_DESCRIPTION_LENGTH: 500, // Maximum characters for description
     SHEETS: {
         SOURCE: {
             ID: null // Will be loaded from environment
@@ -59,6 +60,20 @@ function parseISO8601Duration(duration) {
     return hours * 3600 + minutes * 60 + seconds;
 }
   
+function truncateDescription(description) {
+    if (!description) return '';
+    
+    
+    if (description.length <= CONFIG.MAX_DESCRIPTION_LENGTH) {
+        return description;
+    }
+    
+    // Try to find a sentence boundary near the limit
+    const truncated = description.substring(0, CONFIG.MAX_DESCRIPTION_LENGTH);
+
+    return truncated.trim() + '...';
+}
+  
 function classifyVideosWithGemini(videos) {
     const apiKey = PropertiesService.getScriptProperties().getProperty('GOOGLE_API_KEY');
     const url = `https://generativelanguage.googleapis.com/${CONFIG.API_VERSION}/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
@@ -68,7 +83,7 @@ function classifyVideosWithGemini(videos) {
         return `<video>
             ID: ${video[0]}
             Title: ${video[1]}
-            Description: ${video[4]}
+            Description: ${truncateDescription(video[4])}
         </video>`
     }).join('\n\n');  // Use separator between videos
     
