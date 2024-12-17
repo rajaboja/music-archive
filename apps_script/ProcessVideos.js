@@ -60,6 +60,16 @@ function parseISO8601Duration(duration) {
     return hours * 3600 + minutes * 60 + seconds;
 }
   
+function matchesPattern(video) {
+    const title = (video[1] || '').toLowerCase();
+    const description = (video[4] || '').toLowerCase();
+    
+    // Match variations: t.m.krishna, t m krishna, tm krishna
+    const pattern = /t\.?\s*m\.?\s*krishna/;
+    
+    return pattern.test(title) || pattern.test(description);
+}
+  
 function truncateDescription(description) {
     if (!description) return '';
     
@@ -146,7 +156,7 @@ ${formattedVideos}
 function processVideos() {
     loadConfig();
     const sourceSheet = SpreadsheetApp.openById(CONFIG.SHEETS.SOURCE.ID)
-        .getSheets()[0];  // Get first sheet
+        .getSheets()[0];
     const processedSheet = setupProcessedSheet();
     
     // Get existing processed video IDs
@@ -157,17 +167,35 @@ function processVideos() {
     const sourceData = sourceSheet.getDataRange().getValues();
     const videos = sourceData.slice(1);
     
-    // Filter videos less than 2 minutes and not already processed
+    // First filter for duration and unprocessed videos
     const eligibleVideos = videos.filter(video => {
         const duration = parseISO8601Duration(video[2]);
-        return duration >= CONFIG.MIN_DURATION_SECONDS && !processedVideoIds.has(video[0]);
+        return duration >= CONFIG.MIN_DURATION_SECONDS && 
+               !processedVideoIds.has(video[0]);
+    });
+    
+    // Separate videos based on pattern match
+    const matchingVideos = [];
+    const nonMatchingVideos = [];
+    
+    eligibleVideos.forEach(video => {
+        if (matchesPattern(video)) {
+            matchingVideos.push(video);
+        } else {
+            nonMatchingVideos.push(video);
+        }
+    });
+    
+    // Add non-matching videos to sheet with is_music = false
+    nonMatchingVideos.forEach(video => {
+        processedSheet.appendRow([...video, false]);
     });
     
     const unclassifiedVideos = new Set(); // Track videos that need retry
     
-    // First pass: Process all videos
-    for (let i = 0; i < eligibleVideos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
-        const videoBatch = eligibleVideos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+    // Process only matching videos with Gemini
+    for (let i = 0; i < matchingVideos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
+        const videoBatch = matchingVideos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
         const classifications = classifyVideosWithGemini(videoBatch);
         
         if (classifications) {
@@ -195,7 +223,7 @@ function processVideos() {
     if (unclassifiedVideos.size > 0) {
         Logger.log(`Retrying classification for ${unclassifiedVideos.size} videos`);
         
-        const videosToRetry = eligibleVideos.filter(video => unclassifiedVideos.has(video[0]));
+        const videosToRetry = matchingVideos.filter(video => unclassifiedVideos.has(video[0]));
         
         // Process retry batch
         for (let i = 0; i < videosToRetry.length; i += CONFIG.VIDEOS_PER_REQUEST) {
