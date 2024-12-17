@@ -30,4 +30,4 @@ jobs:
         echo '${{ secrets.CLASP_JSON }}' > .clasp.json
     - name: Deploy scripts
       working-directory: apps_script
-      run: clasp push 
+      run: clasp push --force
