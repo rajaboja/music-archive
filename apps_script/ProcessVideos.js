@@ -74,9 +74,7 @@ function classifyVideosWithGemini(videos) {
     
     const prompt = `Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.
 
-<videos>
 ${formattedVideos}
-</videos>
 
 <guidelines>
 - TRUE: Videos where T.M.Krishna is performing music (concerts, recordings, music videos)
