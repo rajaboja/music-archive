@@ -109,13 +109,7 @@ function initializeSpreadsheet() {
   }
 }
 
-function createDailyTrigger() {
-  // Delete any existing triggers first
-  var triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach(function(trigger) {
-    ScriptApp.deleteTrigger(trigger);
-  });
-  
+function createDailyTrigger() {  
   // Create new daily trigger
   ScriptApp.newTrigger('updateSpreadsheetDaily')
       .timeBased()

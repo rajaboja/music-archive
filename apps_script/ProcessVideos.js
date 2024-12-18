@@ -280,11 +280,7 @@ function sortProcessedSheet(processedSheet) {
     }
 }
   
-function createDailyProcessingTrigger() {
-    // Delete existing triggers
-    const triggers = ScriptApp.getProjectTriggers();
-    triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
-    
+function createDailyProcessingTrigger() {    
     // Create new daily trigger to run after the raw data is updated
     ScriptApp.newTrigger('processVideos')
         .timeBased()

@@ -73,6 +73,5 @@ function setupPlaylist() {
   if (!props.getProperty('PLAYLIST_ID')) createPlaylist();
   if (!props.getProperty('PROCESSED_SPREADSHEET_ID')) throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
   
-  ScriptApp.getProjectTriggers().forEach(trigger => ScriptApp.deleteTrigger(trigger));
   ScriptApp.newTrigger('syncToYouTubePlaylist').timeBased().everyDays(1).atHour(3).create();
 } 
