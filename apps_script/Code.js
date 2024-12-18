@@ -107,7 +107,6 @@ function initializeSpreadsheet() {
       ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name']
     ]);
   }
-  updateSpreadsheetDaily();
 }
 
 function createDailyTrigger() {
