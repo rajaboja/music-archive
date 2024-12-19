@@ -60,15 +60,20 @@ function syncToYouTubePlaylist() {
 
   Logger.log(`Identified ${videosToAdd.length} videos to add to the playlist`);
 
-  videosToAdd.forEach(videoId => {
+  for (const videoId of videosToAdd) {
     try {
       addVideoToPlaylist(videoId);
     } catch (e) {
+      if (e.message.includes('quota')) {
+        Logger.log('YouTube API quota exceeded. Stopping further processing.');
+        return;
+      }
+      
       if (!e.message.includes('videoNotFound')) {
         Logger.log(`Failed to add video ${videoId}: ${e.message}`);
       }
     }
-  });
+  }
 }
 
 function setupPlaylist() {
