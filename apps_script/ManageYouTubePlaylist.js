@@ -38,8 +38,10 @@ function addVideoToPlaylist(videoId) {
   return YouTube.PlaylistItems.insert({
     snippet: {
       playlistId,
-      position: 0, // Insert at the beginning of the playlist
-      resourceId: { kind: 'youtube#video', videoId }
+      resourceId: { 
+        kind: 'youtube#video', 
+        videoId 
+      }
     }
   }, 'snippet');
 }
