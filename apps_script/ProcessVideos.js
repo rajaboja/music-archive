@@ -5,28 +5,22 @@ const CONFIG = {
     GEMINI_MODEL: 'gemini-1.5-flash-8b',
     API_VERSION: 'v1beta',
     MAX_DESCRIPTION_LENGTH: 500, // Maximum characters for description
-    SHEETS: {
-        SOURCE: {
-            ID: null // Will be loaded from environment
-        },
-        PROCESSED: {
-            ID: null // Will be loaded from environment
-        }
-    }
+    SOURCE_ID: null,      // Will be loaded from environment
+    PROCESSED_ID: null    // Will be loaded from environment
 };
   
 function loadConfig() {
     const properties = PropertiesService.getScriptProperties();
-    CONFIG.SHEETS.SOURCE.ID = properties.getProperty('SOURCE_SPREADSHEET_ID');
-    CONFIG.SHEETS.PROCESSED.ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
+    CONFIG.SOURCE_ID = properties.getProperty('SOURCE_SPREADSHEET_ID');
+    CONFIG.PROCESSED_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
     
-    if (!CONFIG.SHEETS.SOURCE.ID || !CONFIG.SHEETS.PROCESSED.ID) {
+    if (!CONFIG.SOURCE_ID || !CONFIG.PROCESSED_ID) {
         throw new Error('Spreadsheet IDs not configured in script properties');
     }
 }
   
 function setupProcessedSheet() {
-    const spreadsheet = SpreadsheetApp.openById(CONFIG.SHEETS.PROCESSED.ID);
+    const spreadsheet = SpreadsheetApp.openById(CONFIG.PROCESSED_ID);
     let sheet = spreadsheet.getSheets()[0];  // Get first sheet
     
     // Check if header row exists
@@ -154,7 +148,7 @@ ${formattedVideos}
   
 function processVideos() {
     loadConfig();
-    const sourceSheet = SpreadsheetApp.openById(CONFIG.SHEETS.SOURCE.ID).getSheets()[0];
+    const sourceSheet = SpreadsheetApp.openById(CONFIG.SOURCE_ID).getSheets()[0];
     const processedSheet = setupProcessedSheet();
     
     try {
