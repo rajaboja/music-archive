@@ -71,7 +71,6 @@ function truncateDescription(description) {
         return description;
     }
     
-    // Try to find a sentence boundary near the limit
     const truncated = description.substring(0, CONFIG.MAX_DESCRIPTION_LENGTH);
 
     return truncated.trim() + '...';
