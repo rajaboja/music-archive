@@ -26,7 +26,6 @@ function loadConfig() {
 }
   
 function setupProcessedSheet() {
-    loadConfig();
     const spreadsheet = SpreadsheetApp.openById(CONFIG.SHEETS.PROCESSED.ID);
     let sheet = spreadsheet.getSheets()[0];  // Get first sheet
     
@@ -239,9 +238,7 @@ function processMatchingVideos(processedSheet, videos) {
 function processVideoBatch(processedSheet, videoBatch, unclassifiedVideos) {
     const classifications = classifyVideosWithGemini(videoBatch);
     
-    if (classifications) {
-        const classifiedIds = new Set(classifications.map(c => c.video_id));
-        
+    if (classifications) {      
         videoBatch.forEach(video => {
             const videoId = video[0];
             const classification = classifications.find(c => c.video_id === videoId);
@@ -291,13 +288,7 @@ function createDailyProcessingTrigger() {
     Logger.log('Daily processing trigger created successfully');
 }
   
-function setupProcessing() {
-    // Verify spreadsheet IDs are configured
-    loadConfig();
-    
-    // Setup processed sheet
-    setupProcessedSheet();
-    
+function setupProcessing() {  
     // Create trigger
     createDailyProcessingTrigger();
     
