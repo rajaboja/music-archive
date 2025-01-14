@@ -80,6 +80,13 @@ function classifyVideosWithGemini(videos) {
     const apiKey = PropertiesService.getScriptProperties().getProperty('GOOGLE_API_KEY');
     const url = `https://generativelanguage.googleapis.com/${CONFIG.API_VERSION}/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
     
+    const systemInstruction = `You are a video content classifier specialized in identifying music performances by T.M.Krishna. 
+Your task is to analyze YouTube video metadata and determine if each video contains a music performance by T.M.Krishna.
+
+Classification Guidelines:
+- TRUE: Videos where T.M.Krishna is performing music (concerts, recordings, music videos)
+- FALSE: All other content (lectures, interviews, non-musical content)`;
+
     // Format videos for the prompt
     const formattedVideos = videos.map(video => {
         return `<video>
@@ -87,44 +94,42 @@ function classifyVideosWithGemini(videos) {
             Title: ${video[1]}
             Description: ${truncateDescription(video[4])}
         </video>`
-    }).join('\n\n');  // Use separator between videos
-    
-    const prompt = `Analyze these YouTube videos and classify if each is a music video/performance by T.M.Krishna.
+    }).join('\n\n');
 
-${formattedVideos}
-
-<guidelines>
-- TRUE: Videos where T.M.Krishna is performing music (concerts, recordings, music videos)
-- FALSE: All other content (lectures, interviews, non-musical content)
-</guidelines>`;
-    
-    const responseSchema = {
-        type: "array",
-        items: {
-            type: "object",
-            properties: {
-                video_id: {
-                    type: "string",
-                    description: "The ID of the YouTube video"
-                },
-                is_music: {
-                    type: "boolean",
-                    description: "true if the video is a music performance by T.M.Krishna, false otherwise"
-                }
-            },
-            required: ["video_id", "is_music"]
-        }
-    };
     
     const requestBody = {
         contents: [{
+            role: "user",
             parts: [{
-                text: prompt
+                text: formattedVideos
             }]
         }],
+        systemInstruction: {
+            role: "user",
+            parts: [{
+                text: systemInstruction
+            }]
+        },
         generationConfig: {
+            maxOutputTokens: 8192,
             responseMimeType: "application/json",
-            responseSchema: responseSchema
+            responseSchema: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        video_id: {
+                            type: "string",
+                            description: "The ID of the YouTube video"
+                        },
+                        is_music: {
+                            type: "boolean",
+                            description: "true if the video is a music performance by T.M.Krishna, false otherwise"
+                        }
+                    },
+                    required: ["video_id", "is_music"]
+                }
+            }
         }
     };
     
