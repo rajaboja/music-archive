@@ -33,17 +33,36 @@ function getPlaylistVideos() {
   return videos;
 }
 
+function deleteVideoFromSheet(videoId) {
+  const sheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID')).getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const rowIndex = data.findIndex((row, index) => index > 0 && row[0] === videoId);
+  
+  if (rowIndex > 0) {
+    sheet.deleteRow(rowIndex + 1);
+    Logger.log(`Deleted row for video ${videoId} from the sheet`);
+  }
+}
+
 function addVideoToPlaylist(videoId) {
   const playlistId = props.getProperty('PLAYLIST_ID');
-  return YouTube.PlaylistItems.insert({
-    snippet: {
-      playlistId,
-      resourceId: { 
-        kind: 'youtube#video', 
-        videoId 
+  try {
+    return YouTube.PlaylistItems.insert({
+      snippet: {
+        playlistId,
+        resourceId: { 
+          kind: 'youtube#video', 
+          videoId 
+        }
       }
+    }, 'snippet');
+  } catch (e) {
+    if (e.message.includes('Video not found')) {
+      Logger.log(`Video ${videoId} not found. Deleting from sheet...`);
+      deleteVideoFromSheet(videoId);
     }
-  }, 'snippet');
+    throw e;
+  }
 }
 
 function syncToYouTubePlaylist() {
@@ -81,4 +100,4 @@ function setupPlaylist() {
   if (!props.getProperty('PROCESSED_SPREADSHEET_ID')) throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
   
   ScriptApp.newTrigger('syncToYouTubePlaylist').timeBased().everyDays(1).atHour(3).create();
-} 
+}
