@@ -2,7 +2,7 @@
 const CONFIG = {
     VIDEOS_PER_REQUEST: 50,
     MIN_DURATION_SECONDS: 120,
-    GEMINI_MODEL: 'gemini-1.5-flash-8b',
+    GEMINI_MODEL: 'gemini-2.0-flash-lite',
     API_VERSION: 'v1beta',
     MAX_DESCRIPTION_LENGTH: 500, // Maximum characters for description
     SOURCE_ID: null,      // Will be loaded from environment
