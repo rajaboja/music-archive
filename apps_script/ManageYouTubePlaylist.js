@@ -65,20 +65,50 @@ function addVideoToPlaylist(videoId) {
   }
 }
 
+function removeVideoFromPlaylist(videoId) {
+  const playlistId = props.getProperty('PLAYLIST_ID');
+  const playlistItems = YouTube.PlaylistItems.list('id', {
+    playlistId: playlistId,
+    videoId: videoId
+  });
+
+  if (playlistItems.items && playlistItems.items.length > 0) {
+    YouTube.PlaylistItems.remove(playlistItems.items[0].id);
+    Logger.log(`Removed video ${videoId} from playlist`);
+  }
+}
+
 function syncToYouTubePlaylist() {
   const sheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID')).getSheets()[0];
-  const newVideos = sheet.getDataRange().getValues()
-    .slice(1)  // Skip header
-    .filter(row => row[7] === true)  // Only rows marked as music videos with true
-    .map(row => row[0]);  // Get video IDs
+  const allSheetRows = sheet.getDataRange().getValues().slice(1);  // Skip header
+  
+  // Get all video IDs that should be in playlist (marked as true)
+  const shouldBeInPlaylist = allSheetRows
+    .filter(row => row[7] === true)
+    .map(row => row[0]);
 
-  Logger.log(`Found ${newVideos.length} new videos to process`);
+  Logger.log(`Found ${shouldBeInPlaylist.length} videos that should be in playlist`);
 
+  // Get current videos in playlist
   const existingVideos = getPlaylistVideos();
-  const videosToAdd = newVideos.filter(id => !existingVideos.includes(id));
+  
+  // Videos to add (in sheet with true but not in playlist)
+  const videosToAdd = shouldBeInPlaylist.filter(id => !existingVideos.includes(id));
+  // Videos to remove (in playlist but not in sheet with true)
+  const videosToRemove = existingVideos.filter(id => !shouldBeInPlaylist.includes(id));
 
-  Logger.log(`Identified ${videosToAdd.length} videos to add to the playlist`);
+  Logger.log(`Identified ${videosToAdd.length} videos to add and ${videosToRemove.length} to remove`);
 
+  // Remove videos first
+  for (const videoId of videosToRemove) {
+    try {
+      removeVideoFromPlaylist(videoId);
+    } catch (e) {
+      Logger.log(`Failed to remove video ${videoId}: ${e.message}`);
+    }
+  }
+
+  // Then add new videos
   for (const videoId of videosToAdd) {
     try {
       addVideoToPlaylist(videoId);
