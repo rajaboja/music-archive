@@ -99,5 +99,20 @@ function setupPlaylist() {
   if (!props.getProperty('PLAYLIST_ID')) createPlaylist();
   if (!props.getProperty('PROCESSED_SPREADSHEET_ID')) throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
   
-  ScriptApp.newTrigger('syncToYouTubePlaylist').timeBased().everyDays(1).atHour(3).create();
+  // Delete existing triggers
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'syncToYouTubePlaylist') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // Create new onChange trigger
+  const spreadsheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID'));
+  ScriptApp.newTrigger('syncToYouTubePlaylist')
+    .forSpreadsheet(spreadsheet)
+    .onChange()
+    .create();
+    
+  Logger.log('Created onChange trigger for syncToYouTubePlaylist');
 }
