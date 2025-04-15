@@ -54,13 +54,13 @@ function parseISO8601Duration(duration) {
 }
   
 function matchesPattern(video) {
-    const title = (video[1] || '').toLowerCase();
-    const description = (video[4] || '').toLowerCase();
+    // Combine title and description with newline separator to prevent boundary matches
+    const searchText = `${video[1] || ''}\n${video[4] || ''}`;
     
     // Match variations: t.m.krishna, t m krishna, tm krishna
-    const pattern = /t\.?\s*m\.?\s*krishna/;
+    const pattern = /t\.?\s*m\.?\s*krishna/i;
     
-    return pattern.test(title) || pattern.test(description);
+    return pattern.test(searchText);
 }
   
 function truncateDescription(description) {
@@ -291,4 +291,4 @@ function setupProcessing() {
     createDailyProcessingTrigger();
     
     Logger.log('Setup completed successfully');
-} 
+}
