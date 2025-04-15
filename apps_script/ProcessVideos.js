@@ -8,7 +8,9 @@ const CONFIG = {
     SOURCE_ID: null,      // Will be loaded from environment
     PROCESSED_ID: null    // Will be loaded from environment
 };
-  
+
+const PATTERN = /t\.?\s*m\.?\s*krishna/i;
+
 function loadConfig() {
     const properties = PropertiesService.getScriptProperties();
     CONFIG.SOURCE_ID = properties.getProperty('SOURCE_SPREADSHEET_ID');
@@ -54,13 +56,8 @@ function parseISO8601Duration(duration) {
 }
   
 function matchesPattern(video) {
-    // Combine title and description with newline separator to prevent boundary matches
     const searchText = `${video[1] || ''}\n${video[4] || ''}`;
-    
-    // Match variations: t.m.krishna, t m krishna, tm krishna
-    const pattern = /t\.?\s*m\.?\s*krishna/i;
-    
-    return pattern.test(searchText);
+    return PATTERN.test(searchText);
 }
   
 function truncateDescription(description) {
