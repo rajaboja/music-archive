@@ -141,7 +141,7 @@ function setupPlaylist() {
   const spreadsheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID'));
   ScriptApp.newTrigger('syncToYouTubePlaylist')
     .forSpreadsheet(spreadsheet)
-    .onEdit()
+    .onChange()
     .create();
     
   Logger.log('Created onChange trigger for syncToYouTubePlaylist');
