@@ -1,5 +1,6 @@
 from loguru import logger
 from fasthtml.common import *
+from starlette.staticfiles import StaticFiles
 from playlist_manager import PlaylistManager
 from config import Config
 async def initialize_services():
@@ -19,6 +20,9 @@ async def initialize_services():
 # Create the FastHTML app
 app, rt = fast_app()
 
+# Mount static files middleware
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @rt("/")
 async def get(request):
     try:
@@ -29,21 +33,21 @@ async def get(request):
         playlist_manager = request.app.state.playlist_manager
         playlist = await playlist_manager.load_playlist()
 
-        # Create an ordered list of track titles
-        track_list = Ol(*(
-            Li(track['title'])
-            for track in playlist
-        ))
+        track_list = Ol(
+            *(Li(track['title'], class_="track-item") for track in playlist),
+            class_="track-list"
+        )
+
+        content = Div(
+            track_list,
+            class_="playlist-container"
+        )
 
         return Titled(
-            "T M Krishna's Concerts",
+            "T M Krishna's Concerts", 
             Div(
-                Style("""
-                    body { font-family: Verdana, Arial; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
-                    ol { margin: 20px 0; }
-                    li { margin-bottom: 10px; }
-                """),
-                track_list
+                Link(rel="stylesheet", href="/static/css/main.css"),
+                content
             )
         )
 
