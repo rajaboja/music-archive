@@ -16,12 +16,4 @@ body {
     width: 100%;
 }
 
-.track-list { 
-    margin: clamp(10px, 3vh, 20px) 0;
-    padding-left: clamp(20px, 5vw, 40px);
-}
 
-.track-item { 
-    margin-bottom: clamp(5px, 2vh, 10px);
-    padding-left: clamp(5px, 1vw, 10px);
-}

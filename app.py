@@ -3,6 +3,7 @@ from fasthtml.common import *
 from starlette.staticfiles import StaticFiles
 from playlist_manager import PlaylistManager
 from config import Config
+
 async def initialize_services():
     try:
         playlist_manager = PlaylistManager(
@@ -18,7 +19,7 @@ async def initialize_services():
         raise
 
 # Create the FastHTML app
-app, rt = fast_app()
+app, rt = fast_app(live=True)
 
 # Mount static files middleware
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -33,27 +34,30 @@ async def get(request):
         playlist_manager = request.app.state.playlist_manager
         playlist = await playlist_manager.load_playlist()
 
-        track_list = Ol(
-            *(Li(track['title'], class_="track-item") for track in playlist),
-            class_="track-list"
-        )
+        tracks_list = []
+        for track in playlist:
+            video_url = f"https://youtu.be/{track['video_id']}"
+            tracks_list.extend([
+                A(track['title'], href=video_url),
+                Br(),
+                Br()
+            ])
 
         content = Div(
-            track_list,
-            class_="playlist-container"
+            Div(
+                *tracks_list
+            ),
+            cls="container" 
         )
 
         return Titled(
             "T M Krishna's Concerts", 
-            Div(
-                Link(rel="stylesheet", href="/static/css/main.css"),
-                content
-            )
+            content
         )
 
     except Exception as e:
         logger.exception(f"Unexpected error in GET handler: {e}")
-        return Titled("Error", Div("An unexpected error occurred. Please try again later."))
+        return Titled("Error", Article("An unexpected error occurred. Please try again later.", class_="container"))
 
 if __name__ == "__main__":
     serve()
