@@ -18,8 +18,8 @@ async def initialize_services():
         logger.exception(f"Error initializing services: {e}")
         raise
 
-# Create the FastHTML app
-app, rt = fast_app(live=True)
+
+app, rt = fast_app(secret_key=Config.SECRET_KEY)
 
 # Mount static files middleware
 app.mount("/static", StaticFiles(directory="static"), name="static")
