@@ -1,0 +1,558 @@
+:root {
+  /* Custom color scheme for TMK brand */
+  --pico-primary-500: #2a2a88;
+  --pico-primary-600: #1a1a66;
+  --pico-primary-700: #5858a7;
+  --pico-secondary-500: #5858a7;
+  --pico-background-color: #fff;
+  --pico-card-background-color: #fff;
+  --pico-text-color: #222;
+  --pico-muted-color: #555;
+  --pico-border-color: #eee;
+}
+
+body {
+  font-family: Verdana, Arial, sans-serif;
+  margin: 0;
+  padding-bottom: 80px; /* Space for fixed player controls */
+}
+
+/* Hero banner */
+.hero-banner {
+  background: #000;
+  height: 150px;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-bottom: var(--pico-spacing);
+}
+
+/* Main container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Typography adjustments */
+.subtitle {
+  font-size: 0.813rem; /* 13px */
+  font-weight: normal;
+  color: var(--pico-muted-color);
+  margin-bottom: 1.5rem;
+}
+
+.subtitle a {
+  color: var(--pico-primary-500);
+  text-decoration: none;
+}
+
+.subtitle a:hover {
+  text-decoration: underline;
+}
+
+/* Player container */
+#player-container {
+  width: 100%;
+  aspect-ratio: 16/9;
+  max-height: 300px;
+  background: #000;
+  border-radius: var(--pico-border-radius);
+  overflow: hidden;
+  box-shadow: var(--pico-card-box-shadow);
+  position: relative;
+  display: none;
+  margin-bottom: var(--pico-spacing);
+}
+
+#player {
+  width: 100%;
+  height: 100%;
+}
+
+/* Picture-in-picture styling */
+#player-container.pip {
+  display: block;
+  position: fixed;
+  bottom: 80px;
+  right: 1rem;
+  width: min(300px, 40vw);
+  height: min(180px, 24vw);
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+/* Mobile adjustments for PiP */
+@media (max-width: 768px) {
+  #player-container.pip {
+    width: min(250px, 60vw);
+    height: min(140px, 35vw);
+    bottom: 70px;
+    right: 0.5rem;
+  }
+}
+
+/* Loading indicator */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  text-align: center;
+  display: none;
+}
+
+#player-container.loading .loading-indicator {
+  display: block;
+}
+
+/* Playlist styles */
+.playlist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.playlist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--pico-border-color);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.playlist li:hover {
+  background-color: var(--pico-table-row-stripped-background-color);
+}
+
+.playlist li.playing {
+  background-color: rgba(88, 88, 167, 0.1);
+  border-left: 3px solid var(--pico-primary-500);
+  padding-left: 0.5rem;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0; /* Allow text to truncate */
+}
+
+.play-icon {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+  color: var(--pico-primary-500);
+}
+
+.track-title {
+  font-size: 0.875rem;
+  color: var(--pico-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-controls {
+  visibility: hidden;
+  margin-left: 1rem;
+}
+
+.playlist li:hover .track-controls {
+  visibility: visible;
+}
+
+.add-to-playlist {
+  background: transparent;
+  border: none;
+  color: var(--pico-primary-500);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--pico-border-radius);
+}
+
+.add-to-playlist:hover {
+  background-color: var(--pico-primary-100);
+  color: var(--pico-primary-600);
+}
+
+.add-to-playlist.in-playlist {
+  background-color: var(--pico-primary-500);
+  color: white;
+}
+
+.add-to-playlist.in-playlist:hover {
+  background-color: var(--pico-primary-600);
+  color: white;
+}
+
+/* Player controls */
+#player-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--pico-card-background-color);
+  border-top: 1px solid var(--pico-border-color);
+  padding: 0.75rem 1rem;
+  z-index: 1003;
+  display: none;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+#player-controls.active {
+  display: block;
+}
+
+.player-controls-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-button {
+  background: transparent;
+  border: none;
+  color: var(--pico-primary-500);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--pico-border-radius);
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  background-color: var(--pico-primary-100);
+  color: var(--pico-primary-600);
+}
+
+.control-button.active {
+  color: var(--pico-primary-700);
+}
+
+/* Progress container */
+.progress-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 200px; /* Ensure minimum width for visibility */
+  grid-column: 2; /* Explicitly place in middle column on desktop */
+  grid-row: 1;
+}
+
+#progress-container {
+  flex: 1;
+  height: 8px; /* Increased height for better visibility */
+  background: var(--pico-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid rgba(42, 42, 136, 0.3); /* More visible border for debugging */
+  min-width: 150px; /* Ensure the progress bar has minimum width */
+}
+
+#progress-container:hover {
+  height: 8px; /* Slightly taller on hover */
+  transition: height 0.2s ease;
+}
+
+#progress-bar {
+  height: 100%;
+  background: var(--pico-primary-500);
+  width: 0%;
+  border-radius: 3px;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 2px rgba(42, 42, 136, 0.3); /* Subtle glow */
+}
+
+#time-display {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Volume controls */
+#volume-container {
+  position: relative;
+  padding: 0.25rem; /* Add padding to increase hover area */
+  border-radius: var(--pico-border-radius);
+  transition: background-color 0.2s ease;
+}
+
+#volume-container:hover {
+  background-color: var(--pico-primary-100);
+}
+
+#volume-slider-container {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: none;
+  z-index: 1004;
+  width: 40px;
+  height: 100px;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+#volume-slider {
+  width: 80px;
+  height: 4px;
+  margin: 0;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+#volume-slider::-webkit-slider-track {
+  background: rgba(170, 170, 170, 0.4);
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  box-shadow: none;
+}
+
+#volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--pico-primary-500);
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  margin-top: -4px; /* Center the thumb */
+}
+
+/* Firefox */
+#volume-slider::-moz-range-track {
+  background: rgba(170, 170, 170, 0.4);
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  outline: none;
+}
+
+#volume-slider::-moz-range-thumb {
+  background: var(--pico-primary-500);
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Remove any focus outline */
+#volume-slider:focus {
+  outline: none;
+}
+
+#volume-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--pico-primary-500), 0 1px 3px rgba(0,0,0,0.2);
+}
+
+
+
+[data-theme="dark"] #volume-slider::-webkit-slider-track {
+  background: rgba(120, 120, 120, 0.4);
+}
+
+[data-theme="dark"] #volume-slider::-moz-range-track {
+  background: rgba(120, 120, 120, 0.4);
+}
+
+/* Playlist panel */
+#playlist-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, 90vw);
+  max-height: 80vh;
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-border-color);
+  border-radius: var(--pico-border-radius);
+  box-shadow: var(--pico-modal-overlay-background-color);
+  z-index: 1005;
+  display: none;
+  overflow: hidden;
+}
+
+#playlist-panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+#playlist-panel h3 {
+  margin: 0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--pico-border-color);
+  background: var(--pico-table-row-stripped-background-color);
+}
+
+#custom-playlist-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.5rem 1rem;
+}
+
+/* Loop button indicators */
+#loop-button.loop-single::after {
+  content: "1";
+  position: absolute;
+  font-size: 8px;
+  bottom: 2px;
+  right: 2px;
+  background: var(--pico-primary-500);
+  color: white;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#loop-button.loop-playlist::after {
+  content: "∞";
+  position: absolute;
+  font-size: 8px;
+  bottom: 2px;
+  right: 2px;
+  background: var(--pico-primary-500);
+  color: white;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .player-controls-inner {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 0.5rem;
+  }
+
+  .progress-group {
+    grid-column: 1 / -1; /* Span full width on mobile */
+    grid-row: 1; /* Put progress bar first on mobile */
+    order: -1;
+    min-width: 0; /* Remove min-width constraint on mobile */
+  }
+
+  .controls-group:last-child {
+    justify-self: end;
+  }
+
+  #time-display {
+    font-size: 0.625rem;
+    min-width: 70px;
+  }
+
+  .control-button {
+    padding: 0.375rem;
+  }
+
+  .control-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Touch-friendly targets */
+@media (max-width: 768px) {
+  .playlist li {
+    padding: 1rem 0;
+  }
+
+  .track-controls {
+    display: block; /* Always show on mobile */
+    position: static;
+    margin-left: 1rem;
+  }
+
+  .add-to-playlist {
+    padding: 0.5rem;
+  }
+}
+
+/* Grid layout for larger screens */
+@media (min-width: 992px) {
+  .main-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .playlist-section {
+    max-width: 500px;
+  }
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1004;
+  display: none;
+}
+
+.modal-overlay.active {
+  display: block;
+}
+
+/* Utility classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
