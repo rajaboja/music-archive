@@ -65,7 +65,8 @@ export class PlaylistManager {
     removeButton.classList.add('add-to-playlist');
     removeButton.title = 'Remove from Playlist';
     removeButton.setAttribute('aria-label', `Remove ${title} from playlist`);
-    removeButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>';
+    // Use a better remove icon - X/cross
+    removeButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     
     // Remove track when clicked
     removeButton.addEventListener('click', (e) => {
@@ -125,8 +126,40 @@ export class PlaylistManager {
     if (this.state.getUserPlaylistLength() > 0) {
       this.selectNextTrackAfterRemoval(trackIndexBeforeRemoval, wasPlaying);
     } else {
-      // If playlist is now empty, clear highlighting
-      this.dom.tracks.forEach(track => track.classList.remove('playing'));
+      // If playlist is now empty, completely clear the player state
+      this.clearPlayerState();
+    }
+  }
+
+  clearPlayerState() {
+    const player = this.state.get('player');
+    
+    // Stop the video completely and clear it
+    player.stopVideo();
+    
+    // Hide only the player container, keep controls visible
+    this.dom.playerContainer.classList.remove('pip');
+    this.dom.playerContainer.style.display = 'none';
+    this.state.set('isVideoVisible', false);
+    
+    // Keep the player controls visible - don't remove 'active' class
+    // this.dom.playerControls.classList.remove('active'); // Commented out
+    
+    // Clear highlighting from all tracks
+    this.dom.tracks.forEach(track => track.classList.remove('playing'));
+    
+    // Reset current index
+    this.state.set('currentIndex', -1);
+    
+    // Clear any playing states
+    this.state.set('isPlaying', false);
+    
+    // Reset progress bar and time display
+    if (this.dom.progressBar) {
+      this.dom.progressBar.style.width = '0%';
+    }
+    if (this.dom.timeDisplay) {
+      this.dom.timeDisplay.textContent = '0:00 / 0:00';
     }
   }
 
@@ -193,6 +226,16 @@ export class PlaylistManager {
           this.state.get('player').loadVideoById(videoId);
         }
       } else {
+        // Ensure video container is visible when loading from playlist
+        this.dom.playerContainer.style.display = 'block';
+        this.dom.playerContainer.classList.add('pip');
+        this.dom.playerContainer.style.opacity = '1';
+        this.dom.playerContainer.style.pointerEvents = 'auto';
+        this.state.set('isVideoVisible', true);
+        
+        // Ensure controls are visible
+        this.dom.playerControls.classList.add('active');
+        
         this.state.get('player').loadVideoById(videoId);
         this.highlightPlaylistTrack(videoId);
         
@@ -239,8 +282,8 @@ export class PlaylistManager {
 
   updatePlaylistButtonState(button, isInPlaylist) {
     if (isInPlaylist) {
-      // Show "remove" state - checkmark icon and different styling
-      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>';
+      // Show "remove" state - outline checkmark icon and different styling
+      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"></polyline></svg>';
       button.title = 'Remove from Playlist';
       button.classList.add('in-playlist');
     } else {

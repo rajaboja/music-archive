@@ -44,6 +44,16 @@ export class PlayerManager {
         this.playlistManager.addToPlaylist(videoId, title, false);
       }
       
+      // Ensure video container is visible
+      this.dom.playerContainer.style.display = 'block';
+      this.dom.playerContainer.classList.add('pip');
+      this.dom.playerContainer.style.opacity = '1';
+      this.dom.playerContainer.style.pointerEvents = 'auto';
+      this.state.set('isVideoVisible', true);
+      
+      // Ensure controls are visible
+      this.dom.playerControls.classList.add('active');
+      
       this.state.get('player').loadVideoById(videoId);
       this.playlistManager.highlightPlaylistTrack(videoId);
       this.playlistManager.highlightTrack(index);
@@ -157,10 +167,44 @@ export class PlayerManager {
     const player = this.state.get('player');
     if (!player) return;
     
+    // Check if we have a valid playlist to play from
+    const userPlaylistLength = this.state.getUserPlaylistLength();
+    if (userPlaylistLength === 0) {
+      // If no playlist, do nothing
+      console.log('No tracks in playlist to play');
+      return;
+    }
+    
     if (this.state.get('isPlaying')) {
       player.pauseVideo();
     } else {
-      player.playVideo();
+      // Check if we have a valid current video
+      const currentVideoId = this.getCurrentVideoId();
+      const isInPlaylist = currentVideoId && this.state.isInUserPlaylist(currentVideoId);
+      
+      if (!isInPlaylist && userPlaylistLength > 0) {
+        // If current video is not in playlist, play the first track from playlist
+        const firstTrack = this.state.getUserPlaylistTrack(0);
+        
+        // Ensure video container is visible
+        this.dom.playerContainer.style.display = 'block';
+        this.dom.playerContainer.classList.add('pip');
+        this.dom.playerContainer.style.opacity = '1';
+        this.dom.playerContainer.style.pointerEvents = 'auto';
+        this.state.set('isVideoVisible', true);
+        
+        player.loadVideoById(firstTrack.videoId);
+        this.playlistManager.highlightPlaylistTrack(firstTrack.videoId);
+      } else {
+        // Ensure video is visible for existing track too
+        this.dom.playerContainer.style.display = 'block';
+        this.dom.playerContainer.classList.add('pip');
+        this.dom.playerContainer.style.opacity = '1';
+        this.dom.playerContainer.style.pointerEvents = 'auto';
+        this.state.set('isVideoVisible', true);
+        
+        player.playVideo();
+      }
     }
   }
 
@@ -229,7 +273,11 @@ export class PlayerManager {
 
   getCurrentVideoId() {
     const player = this.state.get('player');
-    return player && player.getVideoData ? player.getVideoData().video_id : null;
+    if (!player || !player.getVideoData) {
+      return null;
+    }
+    const videoData = player.getVideoData();
+    return videoData ? videoData.video_id : null;
   }
 
   isCurrentTrack(videoId) {

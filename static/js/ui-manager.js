@@ -127,4 +127,35 @@ export class UIManager {
   showSuccess(message) {
     this.showFeedback(message, 'success', 2000);
   }
+
+  setupMobileControls() {
+    // Check if we're on mobile
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // Create mobile controls container if it doesn't exist
+      let mobileContainer = this.dom.playerControls.querySelector('.mobile-controls-container');
+      if (!mobileContainer) {
+        mobileContainer = document.createElement('div');
+        mobileContainer.className = 'mobile-controls-container';
+        
+        // Get all control buttons (excluding volume on mobile)
+        const buttons = this.dom.playerControls.querySelectorAll('.control-button:not(#volume-button)');
+        
+        // Move buttons to mobile container
+        buttons.forEach(button => {
+          mobileContainer.appendChild(button.cloneNode(true));
+        });
+        
+        // Add mobile container to player controls
+        this.dom.playerControls.querySelector('.player-controls-inner').appendChild(mobileContainer);
+      }
+    } else {
+      // Remove mobile container on desktop
+      const mobileContainer = this.dom.playerControls.querySelector('.mobile-controls-container');
+      if (mobileContainer) {
+        mobileContainer.remove();
+      }
+    }
+  }
 }
