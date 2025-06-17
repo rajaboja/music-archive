@@ -20,7 +20,7 @@ body {
 /* Hero banner */
 .hero-banner {
   background: #000;
-  height: 150px;
+  height: 100px;
   width: 100vw;
   position: relative;
   left: 50%;
@@ -52,6 +52,15 @@ body {
 
 .subtitle a:hover {
   text-decoration: underline;
+}
+
+/* Recent additions section styling */
+.playlist-section h2 {
+  font-size: 1.2rem; /* Smaller than default h2 */
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--pico-text-color);
+  font-weight: 600;
 }
 
 /* Player container */
@@ -122,7 +131,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
+  padding: 0; /* Removed padding completely */
   border-bottom: 1px solid var(--pico-border-color);
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -153,7 +162,7 @@ body {
 }
 
 .track-title {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--pico-text-color);
   white-space: nowrap;
   overflow: hidden;
@@ -184,13 +193,14 @@ body {
 }
 
 .add-to-playlist.in-playlist {
-  background-color: var(--pico-primary-500);
-  color: white;
+  background-color: transparent;
+  color: var(--pico-primary-500);
+  border: 1px solid var(--pico-primary-500);
 }
 
 .add-to-playlist.in-playlist:hover {
-  background-color: var(--pico-primary-600);
-  color: white;
+  background-color: var(--pico-primary-100);
+  color: var(--pico-primary-600);
 }
 
 /* Player controls */
@@ -466,20 +476,40 @@ body {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .player-controls-inner {
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: center;
   }
 
   .progress-group {
-    grid-column: 1 / -1; /* Span full width on mobile */
-    grid-row: 1; /* Put progress bar first on mobile */
-    order: -1;
-    min-width: 0; /* Remove min-width constraint on mobile */
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    order: 1;
+    flex-basis: 100%;
   }
 
-  .controls-group:last-child {
-    justify-self: end;
+  /* Force both control groups to be on the same line */
+  .player-controls-inner > .controls-group {
+    order: 2;
+    flex-basis: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Add space between the two control groups */
+  .player-controls-inner > .controls-group:first-of-type {
+    margin-right: 1rem;
+  }
+
+  /* Hide volume controls on mobile */
+  #volume-container {
+    display: none !important;
   }
 
   #time-display {
@@ -500,11 +530,12 @@ body {
 /* Touch-friendly targets */
 @media (max-width: 768px) {
   .playlist li {
-    padding: 1rem 0;
+    padding: 0; /* No padding on mobile either */
   }
 
   .track-controls {
     display: block; /* Always show on mobile */
+    visibility: visible; /* Always visible on mobile */
     position: static;
     margin-left: 1rem;
   }
