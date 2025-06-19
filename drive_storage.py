@@ -8,9 +8,8 @@ from pathlib import Path
 
 
 class DriveStorage:
-    def __init__(self, file_id, local_path, min_duration_seconds):
+    def __init__(self, file_id, min_duration_seconds):
         self.file_id = file_id
-        self.local_path = local_path
         self.min_duration_seconds = min_duration_seconds
         self.df = None
         

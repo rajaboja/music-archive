@@ -15,7 +15,6 @@ async def get(request):
     try:
         playlist_manager = PlaylistManager(
             Config.GOOGLE_DRIVE_FILE_ID, 
-            Config.LOCAL_SPREADSHEET_PATH, 
             Config.MIN_DURATION_SECONDS
         )
         

@@ -2,8 +2,8 @@ from loguru import logger
 from drive_storage import DriveStorage
 
 class PlaylistManager:
-    def __init__(self, file_id, local_path, min_duration_seconds):
-        self.storage = DriveStorage(file_id, local_path, min_duration_seconds)
+    def __init__(self, file_id, min_duration_seconds):
+        self.storage = DriveStorage(file_id, min_duration_seconds)
 
     async def load_playlist(self):
         """Load playlist data from Google Drive"""
