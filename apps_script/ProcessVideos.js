@@ -1,45 +1,18 @@
-// Configuration constants
-const CONFIG = {
-    VIDEOS_PER_REQUEST: 50,
-    MIN_DURATION_SECONDS: 120,
-    GEMINI_MODEL: 'gemini-2.0-flash-lite',
-    API_VERSION: 'v1beta',
-    MAX_DESCRIPTION_LENGTH: 500, // Maximum characters for description
-    SOURCE_ID: null,      // Will be loaded from environment
-    PROCESSED_ID: null    // Will be loaded from environment
-};
-
-const PATTERN = /t\.?\s*m\.?\s*krishna/i;
-
-function loadConfig() {
-    const properties = PropertiesService.getScriptProperties();
-    CONFIG.SOURCE_ID = properties.getProperty('SOURCE_SPREADSHEET_ID');
-    CONFIG.PROCESSED_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
-    
-    if (!CONFIG.SOURCE_ID || !CONFIG.PROCESSED_ID) {
-        throw new Error('Spreadsheet IDs not configured in script properties');
-    }
-}
+// Import configuration management
+// Note: In Apps Script, this would be included via the script editor
   
 function setupProcessedSheet() {
-    const spreadsheet = SpreadsheetApp.openById(CONFIG.PROCESSED_ID);
+    const spreadsheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID'));
     let sheet = spreadsheet.getSheets()[0];  // Get first sheet
     
     // Check if header row exists
-    const headerRange = sheet.getRange(1, 1, 1, 8);
+    const headerCount = getConfig('SHEETS.HEADERS.PROCESSED').length;
+    const headerRange = sheet.getRange(1, 1, 1, headerCount);
     const headerValues = headerRange.getValues()[0];
     
     if (!headerValues[0]) { // If first cell is empty, set headers
-        headerRange.setValues([[
-            'video_id', 
-            'title', 
-            'length', 
-            'published_date', 
-            'description', 
-            'category_id', 
-            'category_name',
-            'is_music_video'
-        ]]);
+        const headers = getConfig('SHEETS.HEADERS.PROCESSED');
+        headerRange.setValues([headers]);
     }
     return sheet;
 }
@@ -56,26 +29,29 @@ function parseISO8601Duration(duration) {
 }
   
 function matchesPattern(video) {
-    const searchText = `${video[1] || ''}\n${video[4] || ''}`;
-    return PATTERN.test(searchText);
+    const titleIndex = getColumnIndex('TITLE');
+    const descriptionIndex = getColumnIndex('DESCRIPTION');
+    const searchText = `${video[titleIndex] || ''}\n${video[descriptionIndex] || ''}`;
+    const pattern = getConfig('PATTERNS.TM_KRISHNA');
+    return pattern.test(searchText);
 }
   
 function truncateDescription(description) {
     if (!description) return '';
     
+    const maxLength = getConfig('PROCESSING.MAX_DESCRIPTION_LENGTH');
     
-    if (description.length <= CONFIG.MAX_DESCRIPTION_LENGTH) {
+    if (description.length <= maxLength) {
         return description;
     }
     
-    const truncated = description.substring(0, CONFIG.MAX_DESCRIPTION_LENGTH);
+    const truncated = description.substring(0, maxLength);
 
     return truncated.trim() + '...';
 }
   
 function classifyVideosWithGemini(videos) {
-    const apiKey = PropertiesService.getScriptProperties().getProperty('GOOGLE_API_KEY');
-    const url = `https://generativelanguage.googleapis.com/${CONFIG.API_VERSION}/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const url = Config.getGeminiApiUrl();
     
     const systemInstruction = `You are a video content classifier specialized in identifying music performances by T.M.Krishna. 
 Your task is to analyze YouTube video metadata and determine if each video contains a music performance by T.M.Krishna.
@@ -85,11 +61,15 @@ Classification Guidelines:
 - FALSE: All other content (lectures, interviews, non-musical content)`;
 
     // Format videos for the prompt
+    const videoIdIndex = getColumnIndex('VIDEO_ID');
+    const titleIndex = getColumnIndex('TITLE');
+    const descriptionIndex = getColumnIndex('DESCRIPTION');
+    
     const formattedVideos = videos.map(video => {
         return `<video>
-            ID: ${video[0]}
-            Title: ${video[1]}
-            Description: ${truncateDescription(video[4])}
+            ID: ${video[videoIdIndex]}
+            Title: ${video[titleIndex]}
+            Description: ${truncateDescription(video[descriptionIndex])}
         </video>`
     }).join('\n\n');
 
@@ -108,8 +88,8 @@ Classification Guidelines:
             }]
         },
         generationConfig: {
-            maxOutputTokens: 8192,
-            responseMimeType: "application/json",
+            maxOutputTokens: getConfig('API.GEMINI.MAX_OUTPUT_TOKENS'),
+            responseMimeType: getConfig('API.GEMINI.RESPONSE_MIME_TYPE'),
             responseSchema: {
                 type: "array",
                 items: {
@@ -148,8 +128,9 @@ Classification Guidelines:
 }
   
 function processVideos() {
-    loadConfig();
-    const sourceSheet = SpreadsheetApp.openById(CONFIG.SOURCE_ID).getSheets()[0];
+    initializeConfig(); // Load configuration first
+    
+    const sourceSheet = SpreadsheetApp.openById(getConfig('ENV.SOURCE_SPREADSHEET_ID')).getSheets()[0];
     const processedSheet = setupProcessedSheet();
     
     try {
@@ -177,17 +158,22 @@ function processVideos() {
   
 function getProcessedVideoIds(processedSheet) {
     const processedData = processedSheet.getDataRange().getValues();
-    return new Set(processedData.slice(1).map(row => row[0]));
+    const videoIdIndex = getColumnIndex('VIDEO_ID');
+    return new Set(processedData.slice(1).map(row => row[videoIdIndex]));
 }
   
 function getEligibleVideos(sourceSheet, processedVideoIds) {
     const sourceData = sourceSheet.getDataRange().getValues();
     const videos = sourceData.slice(1);
     
+    const videoIdIndex = getColumnIndex('VIDEO_ID');
+    const lengthIndex = getColumnIndex('LENGTH');
+    const minDuration = getConfig('PROCESSING.MIN_DURATION_SECONDS');
+    
     return videos.filter(video => {
-        const duration = parseISO8601Duration(video[2]);
-        return duration >= CONFIG.MIN_DURATION_SECONDS && 
-               !processedVideoIds.has(video[0]);
+        const duration = parseISO8601Duration(video[lengthIndex]);
+        return duration >= minDuration && 
+               !processedVideoIds.has(video[videoIdIndex]);
     });
 }
   
@@ -215,10 +201,11 @@ function processNonMatchingVideos(processedSheet, videos) {
   
 function processMatchingVideos(processedSheet, videos) {
     const unclassifiedVideos = new Set();
+    const videosPerRequest = getConfig('PROCESSING.VIDEOS_PER_REQUEST');
     
     // First pass: Process all videos
-    for (let i = 0; i < videos.length; i += CONFIG.VIDEOS_PER_REQUEST) {
-        const videoBatch = videos.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+    for (let i = 0; i < videos.length; i += videosPerRequest) {
+        const videoBatch = videos.slice(i, i + videosPerRequest);
         processVideoBatch(processedSheet, videoBatch, unclassifiedVideos);
     }
     
@@ -232,10 +219,11 @@ function processMatchingVideos(processedSheet, videos) {
   
 function processVideoBatch(processedSheet, videoBatch, unclassifiedVideos) {
     const classifications = classifyVideosWithGemini(videoBatch);
+    const videoIdIndex = getColumnIndex('VIDEO_ID');
     
     if (classifications) {      
         videoBatch.forEach(video => {
-            const videoId = video[0];
+            const videoId = video[videoIdIndex];
             const classification = classifications.find(c => c.video_id === videoId);
             
             if (classification) {
@@ -245,17 +233,20 @@ function processVideoBatch(processedSheet, videoBatch, unclassifiedVideos) {
             }
         });
     } else {
-        videoBatch.forEach(video => unclassifiedVideos.add(video[0]));
+        videoBatch.forEach(video => unclassifiedVideos.add(video[videoIdIndex]));
     }
 }
   
 function processRetryBatch(processedSheet, videosToRetry) {
-    for (let i = 0; i < videosToRetry.length; i += CONFIG.VIDEOS_PER_REQUEST) {
-        const retryBatch = videosToRetry.slice(i, i + CONFIG.VIDEOS_PER_REQUEST);
+    const videosPerRequest = getConfig('PROCESSING.VIDEOS_PER_REQUEST');
+    const videoIdIndex = getColumnIndex('VIDEO_ID');
+    
+    for (let i = 0; i < videosToRetry.length; i += videosPerRequest) {
+        const retryBatch = videosToRetry.slice(i, i + videosPerRequest);
         const classifications = classifyVideosWithGemini(retryBatch);
         
         retryBatch.forEach(video => {
-            const classification = classifications?.find(c => c.video_id === video[0]);
+            const classification = classifications?.find(c => c.video_id === video[videoIdIndex]);
             processedSheet.appendRow([...video, classification ? classification.is_music : null]);
         });
     }
@@ -264,20 +255,25 @@ function processRetryBatch(processedSheet, videosToRetry) {
 function sortProcessedSheet(processedSheet) {
     const lastRow = processedSheet.getLastRow();
     if (lastRow > 1) {
-        const range = processedSheet.getRange(2, 1, lastRow - 1, 8);
+        const headerCount = getConfig('SHEETS.HEADERS.PROCESSED').length;
+        const publishedDateColumn = getColumnIndex('PUBLISHED_DATE') + 1; // 1-based for Sheets API
+        const range = processedSheet.getRange(2, 1, lastRow - 1, headerCount);
         range.sort({
-            column: 4,  // published_date column
+            column: publishedDateColumn,
             ascending: false
         });
     }
 }
   
 function createDailyProcessingTrigger() {    
+    const processingHour = getConfig('TRIGGERS.PROCESSING_HOUR');
+    const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
+    
     // Create new daily trigger to run after the raw data is updated
     ScriptApp.newTrigger('processVideos')
         .timeBased()
-        .everyDays(1)
-        .atHour(2) // Run at 2 AM
+        .everyDays(intervalDays)
+        .atHour(processingHour)
         .create();
     
     Logger.log('Daily processing trigger created successfully');

@@ -1,10 +1,8 @@
 // Google Apps Script to fetch T M Krishna's YouTube videos daily using a general search
-
-const SEARCH_QUERY = 'T M Krishna';
-const MAX_RESULTS = 50; 
-const CATEGORY_CACHE_KEY = 'VIDEO_CATEGORIES';
+// Import configuration management - included via Apps Script editor
 
 function updateSpreadsheetDaily() {
+  initializeConfig(); // Load configuration first
   Logger.log('Starting daily full refresh of videos');
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   
@@ -34,7 +32,8 @@ function updateSpreadsheetDaily() {
     });
     
     // Insert all videos into the spreadsheet
-    sheet.getRange(2, 1, data.length, 7).setValues(data);
+    const headerCount = getConfig('SHEETS.HEADERS.SOURCE').length;
+    sheet.getRange(2, 1, data.length, headerCount).setValues(data);
     Logger.log('Spreadsheet updated successfully with ' + data.length + ' videos');
   } else {
     Logger.log('No videos found');
@@ -44,7 +43,8 @@ function updateSpreadsheetDaily() {
 function clearExistingData(sheet) {
   var lastRow = sheet.getLastRow();
   if (lastRow > 1) { // If there's data beyond the header row
-    sheet.getRange(2, 1, lastRow - 1, 7).clear();
+    const headerCount = getConfig('SHEETS.HEADERS.SOURCE').length;
+    sheet.getRange(2, 1, lastRow - 1, headerCount).clear();
     Logger.log('Cleared existing data from spreadsheet');
   }
 }
@@ -52,11 +52,13 @@ function clearExistingData(sheet) {
 function fetchAllVideos() {
   var pageToken;
   var allVideos = [];
+  const searchQuery = getConfig('API.YOUTUBE.SEARCH_QUERY');
+  const maxResults = getConfig('API.YOUTUBE.MAX_RESULTS');
 
   do {
     var results = YouTube.Search.list('snippet', {
-      q: SEARCH_QUERY,
-      maxResults: MAX_RESULTS,
+      q: searchQuery,
+      maxResults: maxResults,
       type: 'video',
       videoEmbeddable: true,
       pageToken: pageToken
@@ -80,8 +82,10 @@ function fetchAllVideos() {
 }
 
 function getVideoCategories() {
+  const cacheKey = getConfig('CACHE.CATEGORIES_KEY');
+  const cacheTtl = getConfig('CACHE.CATEGORIES_TTL');
   var cache = CacheService.getScriptCache();
-  var cached = cache.get(CATEGORY_CACHE_KEY);
+  var cached = cache.get(cacheKey);
   
   if (cached != null) {
     return JSON.parse(cached);
@@ -96,30 +100,33 @@ function getVideoCategories() {
     categories[item.id] = item.snippet.title;
   });
   
-  cache.put(CATEGORY_CACHE_KEY, JSON.stringify(categories), 21600); // Cache for 6 hours
+  cache.put(cacheKey, JSON.stringify(categories), cacheTtl);
   return categories;
 }
 
 function initializeSpreadsheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, 7).setValues([
-      ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name']
-    ]);
+    const headers = getConfig('SHEETS.HEADERS.SOURCE');
+    const headerCount = headers.length;
+    sheet.getRange(1, 1, 1, headerCount).setValues([headers]);
   }
 }
 
 function createDailyTrigger() {  
+  const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
+  
   // Create new daily trigger
   ScriptApp.newTrigger('updateSpreadsheetDaily')
       .timeBased()
-      .everyDays(1)
+      .everyDays(intervalDays)
       .create();
   
   Logger.log('Daily trigger created successfully');
 }
 
 function setupSourceSheet() {
+  initializeConfig(); // Load configuration first
   initializeSpreadsheet();
   createDailyTrigger();
 } 

@@ -1,28 +1,31 @@
-const props = PropertiesService.getScriptProperties();
-const PLAYLIST_NAME = "T.M. Krishna Music Performances";
-
 function createPlaylist() {
+  const playlistName = getConfig('PLAYLIST.NAME');
+  const playlistDescription = getConfig('PLAYLIST.DESCRIPTION');
+  const privacyStatus = getConfig('PLAYLIST.PRIVACY_STATUS');
+  
   const playlist = YouTube.Playlists.insert({
     snippet: {
-      title: PLAYLIST_NAME,
-      description: "A curated playlist of T.M. Krishna's music performances. Updated daily."
+      title: playlistName,
+      description: playlistDescription
     },
-    status: { privacyStatus: 'private' }
+    status: { privacyStatus: privacyStatus }
   }, 'snippet,status');
 
+  const props = PropertiesService.getScriptProperties();
   props.setProperty('PLAYLIST_ID', playlist.id);
   return playlist;
 }
 
 function getPlaylistVideos() {
-  const playlistId = props.getProperty('PLAYLIST_ID');
+  const playlistId = getConfig('ENV.PLAYLIST_ID');
+  const maxResults = getConfig('API.YOUTUBE.MAX_RESULTS');
   let videos = [];
   let pageToken;
 
   do {
     const response = YouTube.PlaylistItems.list('snippet', {
       playlistId: playlistId,
-      maxResults: 50,
+      maxResults: maxResults,
       pageToken: pageToken
     });
     
@@ -34,9 +37,10 @@ function getPlaylistVideos() {
 }
 
 function deleteVideoFromSheet(videoId) {
-  const sheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID')).getSheets()[0];
+  const sheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID')).getSheets()[0];
   const data = sheet.getDataRange().getValues();
-  const rowIndex = data.findIndex((row, index) => index > 0 && row[0] === videoId);
+  const videoIdIndex = getColumnIndex('VIDEO_ID');
+  const rowIndex = data.findIndex((row, index) => index > 0 && row[videoIdIndex] === videoId);
   
   if (rowIndex > 0) {
     sheet.deleteRow(rowIndex + 1);
@@ -45,7 +49,7 @@ function deleteVideoFromSheet(videoId) {
 }
 
 function addVideoToPlaylist(videoId) {
-  const playlistId = props.getProperty('PLAYLIST_ID');
+  const playlistId = getConfig('ENV.PLAYLIST_ID');
   try {
     return YouTube.PlaylistItems.insert({
       snippet: {
@@ -66,7 +70,7 @@ function addVideoToPlaylist(videoId) {
 }
 
 function removeVideoFromPlaylist(videoId) {
-  const playlistId = props.getProperty('PLAYLIST_ID');
+  const playlistId = getConfig('ENV.PLAYLIST_ID');
   const playlistItems = YouTube.PlaylistItems.list('id', {
     playlistId: playlistId,
     videoId: videoId
@@ -79,27 +83,26 @@ function removeVideoFromPlaylist(videoId) {
 }
 
 function syncToYouTubePlaylist() {
-  const sheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID')).getSheets()[0];
-  const allSheetRows = sheet.getDataRange().getValues().slice(1);  // Skip header
+  initializeConfig();
+  const sheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID')).getSheets()[0];
+  const allSheetRows = sheet.getDataRange().getValues().slice(1);
   
-  // Get all video IDs that should be in playlist (marked as true)
+  const videoIdIndex = getColumnIndex('VIDEO_ID');
+  const isMusicIndex = getColumnIndex('IS_MUSIC_VIDEO');
+  
   const shouldBeInPlaylist = allSheetRows
-    .filter(row => row[7] === true)
-    .map(row => row[0]);
+    .filter(row => row[isMusicIndex] === true)
+    .map(row => row[videoIdIndex]);
 
   Logger.log(`Found ${shouldBeInPlaylist.length} videos that should be in playlist`);
 
-  // Get current videos in playlist
   const existingVideos = getPlaylistVideos();
   
-  // Videos to add (in sheet with true but not in playlist)
   const videosToAdd = shouldBeInPlaylist.filter(id => !existingVideos.includes(id));
-  // Videos to remove (in playlist but not in sheet with true)
   const videosToRemove = existingVideos.filter(id => !shouldBeInPlaylist.includes(id));
 
   Logger.log(`Identified ${videosToAdd.length} videos to add and ${videosToRemove.length} to remove`);
 
-  // Remove videos first
   for (const videoId of videosToRemove) {
     try {
       removeVideoFromPlaylist(videoId);
@@ -108,7 +111,6 @@ function syncToYouTubePlaylist() {
     }
   }
 
-  // Then add new videos
   for (const videoId of videosToAdd) {
     try {
       addVideoToPlaylist(videoId);
@@ -126,10 +128,13 @@ function syncToYouTubePlaylist() {
 }
 
 function setupPlaylist() {
-  if (!props.getProperty('PLAYLIST_ID')) createPlaylist();
-  if (!props.getProperty('PROCESSED_SPREADSHEET_ID')) throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
+  initializeConfig();
   
-  // Delete existing triggers
+  if (!getConfig('ENV.PLAYLIST_ID')) createPlaylist();
+  if (!getConfig('ENV.PROCESSED_SPREADSHEET_ID')) {
+    throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
+  }
+  
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(trigger => {
     if (trigger.getHandlerFunction() === 'syncToYouTubePlaylist') {
@@ -137,18 +142,18 @@ function setupPlaylist() {
     }
   });
 
-  // Create new onChange trigger
-  const spreadsheet = SpreadsheetApp.openById(props.getProperty('PROCESSED_SPREADSHEET_ID'));
+  const spreadsheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID'));
   ScriptApp.newTrigger('syncToYouTubePlaylist')
     .forSpreadsheet(spreadsheet)
     .onChange()  
     .create();
     
-  // Also add a time-based trigger as backup
+  const syncHour = getConfig('PLAYLIST.SYNC_HOUR');
+  const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
   ScriptApp.newTrigger('syncToYouTubePlaylist')
     .timeBased()
-    .everyDays(1)
-    .atHour(4)  // Run at 4 AM, after the sheet is updated at 2 AM
+    .everyDays(intervalDays)
+    .atHour(syncHour)
     .create();
     
   Logger.log('Created onChange and daily triggers for syncToYouTubePlaylist');
