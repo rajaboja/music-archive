@@ -1,8 +1,10 @@
 import pandas as pd
 import re
 from loguru import logger
-import requests
+import asyncio
+import urllib.request
 import io
+from pathlib import Path
 
 
 class DriveStorage:
@@ -13,19 +15,18 @@ class DriveStorage:
         self.df = None
         
 
-    def download_sheet(self):
+    async def download_sheet(self):
         url = f'https://docs.google.com/spreadsheets/d/{self.file_id}/export?format=xlsx'
         try:
-            response = requests.get(url)
-            response.raise_for_status()
-            with open(self.local_path, 'wb') as f:
-                f.write(response.content)
-            self.df = pd.read_excel(io.BytesIO(response.content))
+            response = await asyncio.to_thread(urllib.request.urlopen, url)
+            content = await asyncio.to_thread(response.read)
+            
+            self.df = pd.read_excel(io.BytesIO(content))
         except Exception as e:
             logger.exception(f"Error downloading sheet: {e}")
             raise
 
-    def load_playlist(self):
+    async def load_playlist(self):
         if self.df is None:
             raise Exception("Sheet not downloaded. Call download_sheet() first.")
             
