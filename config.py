@@ -13,7 +13,6 @@ logger.remove()
 logger.add(sys.stderr, level=LOG_LEVEL)
 
 class Config:
-    CACHE_DURATION = int(os.getenv('CACHE_DURATION', 3600*24))  # 1 day
     SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(16))
 
     GOOGLE_DRIVE_FILE_ID = os.getenv('GOOGLE_DRIVE_FILE_ID')

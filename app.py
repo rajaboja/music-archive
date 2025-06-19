@@ -4,22 +4,8 @@ from starlette.staticfiles import StaticFiles
 from playlist_manager import PlaylistManager
 from config import Config
 
-async def initialize_services():
-    try:
-        playlist_manager = PlaylistManager(
-            Config.GOOGLE_DRIVE_FILE_ID, 
-            Config.LOCAL_SPREADSHEET_PATH, 
-            Config.CACHE_DURATION,
-            Config.MIN_DURATION_SECONDS
-        )
-        await playlist_manager.initialize()
-        return playlist_manager
-    except Exception as e:
-        logger.exception(f"Error initializing services: {e}")
-        raise
-
-
-app, rt = fast_app(secret_key=Config.SECRET_KEY)
+# Create the FastHTML app
+app, rt = fast_app()
 
 # Mount static files middleware
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -27,7 +13,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @rt("/")
 async def get(request):
     try:
-        playlist_manager = await initialize_services()
+        playlist_manager = PlaylistManager(
+            Config.GOOGLE_DRIVE_FILE_ID, 
+            Config.LOCAL_SPREADSHEET_PATH, 
+            Config.MIN_DURATION_SECONDS
+        )
         
         # Get real playlist data - first 5 tracks for "Recent Additions"
         tracks = await playlist_manager.load_playlist()
