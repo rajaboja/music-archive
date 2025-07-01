@@ -1,7 +1,7 @@
 from loguru import logger
 from fasthtml.common import *
 from starlette.staticfiles import StaticFiles
-from playlist_manager import PlaylistManager
+from drive_storage import DriveStorage
 from config import Config
 
 # Create the FastHTML app
@@ -13,13 +13,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @rt("/")
 async def get(request):
     try:
-        playlist_manager = PlaylistManager(
+        storage = DriveStorage(
             Config.GOOGLE_DRIVE_FILE_ID, 
             Config.MIN_DURATION_SECONDS
         )
         
         # Get real playlist data - first 5 tracks for "Recent Additions"
-        tracks = await playlist_manager.load_playlist()
+        tracks = await storage.load_playlist()
         recent_tracks = tracks[:5] if tracks else []
 
         # Build recent tracks HTML exactly like tmk-refactored
