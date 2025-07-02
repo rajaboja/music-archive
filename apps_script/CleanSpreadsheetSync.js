@@ -36,10 +36,6 @@ function syncCleanSpreadsheet() {
     }
 }
 
-function onProcessedSpreadsheetChange() {
-    syncCleanSpreadsheet();
-}
-
 function setupCleanSpreadsheetTrigger() {
     initializeConfig();
     
@@ -47,13 +43,13 @@ function setupCleanSpreadsheetTrigger() {
     
     // Remove existing triggers
     ScriptApp.getProjectTriggers().forEach(trigger => {
-        if (trigger.getHandlerFunction() === 'onProcessedSpreadsheetChange') {
+        if (trigger.getHandlerFunction() === 'syncCleanSpreadsheet') {
             ScriptApp.deleteTrigger(trigger);
         }
     });
     
-    // Create new trigger
-    ScriptApp.newTrigger('onProcessedSpreadsheetChange')
+    // Create new trigger - directly use syncCleanSpreadsheet as handler
+    ScriptApp.newTrigger('syncCleanSpreadsheet')
         .on(processedSpreadsheet)
         .onChange()
         .create();
