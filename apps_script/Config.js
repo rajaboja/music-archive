@@ -28,7 +28,8 @@ const AppConfig = {
   SHEETS: {
     HEADERS: {
       SOURCE: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name'],
-      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name', 'is_music_video']
+      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name', 'is_music_video'],
+      CLEAN: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name']
     },
     COLUMNS: {
       VIDEO_ID: 0,
@@ -55,7 +56,8 @@ const AppConfig = {
 
   TRIGGERS: {
     PROCESSING_HOUR: 2,
-    INTERVAL_DAYS: 1
+    INTERVAL_DAYS: 1,
+    CLEAN_SYNC_ENABLED: true
   },
 
   CACHE: {
@@ -66,6 +68,7 @@ const AppConfig = {
   ENV: {
     SOURCE_SPREADSHEET_ID: null,
     PROCESSED_SPREADSHEET_ID: null,
+    CLEAN_SPREADSHEET_ID: null,
     GOOGLE_API_KEY: null,
     PLAYLIST_ID: null
   }
@@ -86,6 +89,7 @@ class ConfigManager {
     
     this.config.ENV.SOURCE_SPREADSHEET_ID = properties.getProperty('SOURCE_SPREADSHEET_ID');
     this.config.ENV.PROCESSED_SPREADSHEET_ID = properties.getProperty('PROCESSED_SPREADSHEET_ID');
+    this.config.ENV.CLEAN_SPREADSHEET_ID = properties.getProperty('CLEAN_SPREADSHEET_ID');
     this.config.ENV.GOOGLE_API_KEY = properties.getProperty('GOOGLE_API_KEY');
     this.config.ENV.PLAYLIST_ID = properties.getProperty('PLAYLIST_ID');
 

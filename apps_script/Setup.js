@@ -17,6 +17,9 @@ function setup() {
     // From ManageYouTubePlaylist.js
     setupPlaylist();
     
+    // From CleanSpreadsheetSync.js
+    setupCleanSpreadsheetTrigger();
+    
     Logger.log('Setup completed successfully');
   } catch (error) {
     Logger.log('Setup failed: ' + error.message);
