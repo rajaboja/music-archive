@@ -50,7 +50,7 @@ function setupCleanSpreadsheetTrigger() {
     
     // Create new trigger - directly use syncCleanSpreadsheet as handler
     ScriptApp.newTrigger('syncCleanSpreadsheet')
-        .on(processedSpreadsheet)
+        .forSpreadsheet(processedSpreadsheet)
         .onChange()
         .create();
     
