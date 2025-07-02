@@ -1,5 +1,4 @@
 import pandas as pd
-import re
 from loguru import logger
 import asyncio
 import urllib.request
@@ -8,9 +7,8 @@ from pathlib import Path
 
 
 class DriveStorage:
-    def __init__(self, file_id, min_duration_seconds):
+    def __init__(self, file_id):
         self.file_id = file_id
-        self.min_duration_seconds = min_duration_seconds
         self.df = None
         
 
@@ -26,40 +24,19 @@ class DriveStorage:
             raise
 
     async def load_playlist(self):
-        """Load and process playlist data from Google Drive"""
+        """Load playlist data from clean spreadsheet (already filtered for music videos and duration)"""
         try:
             # Download sheet if not already done
             if self.df is None:
                 await self.download_sheet()
                 
-            initial_count = len(self.df)
-            self.df = self.df.dropna(subset='length')
-            logger.debug(f"Dropped {initial_count - len(self.df)} rows with empty length values")
+            # Clean spreadsheet already contains only music videos filtered by duration
+            # Just need to format the published_date
+            self.df['published_date'] = pd.to_datetime(self.df['published_date']).dt.strftime('%Y-%m-%d')
             
-            self.df = self.df[self.df['is_music_video'] == True].copy()
-            logger.info(f"Filtered to keep only music videos. {len(self.df)} videos remaining")
+            logger.info(f"Loaded {len(self.df)} music videos from clean spreadsheet")
+            return self.df.to_dict('records')
             
-            self.df['duration_seconds'] = self.df['length'].apply(self.parse_duration)
-            filtered_df = self.df[self.df['duration_seconds'] > self.min_duration_seconds].copy()
-            logger.info(f"Filtered {len(self.df) - len(filtered_df)} videos shorter than {self.min_duration_seconds} seconds")
-            
-            filtered_df['published_date'] = pd.to_datetime(filtered_df['published_date']).dt.strftime('%Y-%m-%d')
-
-            return filtered_df.to_dict('records')
         except Exception as e:
             logger.exception(f"Error loading playlist: {e}")
             return []
-
-    @staticmethod
-    def parse_duration(duration):
-        match = re.match(r'PT(\d+H)?(\d+M)?(\d+S)?', duration)
-        if not match:
-            logger.warning(f"Invalid duration format: {duration}")
-            return 0
-        
-        hours = int(match.group(1)[:-1]) if match.group(1) else 0
-        minutes = int(match.group(2)[:-1]) if match.group(2) else 0
-        seconds = int(match.group(3)[:-1]) if match.group(3) else 0
-        
-        total_seconds = hours * 3600 + minutes * 60 + seconds
-        return total_seconds

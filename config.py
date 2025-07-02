@@ -16,6 +16,4 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(16))
 
     GOOGLE_DRIVE_FILE_ID = os.getenv('GOOGLE_DRIVE_FILE_ID')
-
-    MIN_DURATION_SECONDS = int(os.getenv('MIN_DURATION_SECONDS', 120))  # Default to 2 minutes
     

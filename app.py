@@ -13,10 +13,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @rt("/")
 async def get(request):
     try:
-        storage = DriveStorage(
-            Config.GOOGLE_DRIVE_FILE_ID, 
-            Config.MIN_DURATION_SECONDS
-        )
+        storage = DriveStorage(Config.GOOGLE_DRIVE_FILE_ID)
         
         # Get real playlist data - first 5 tracks for "Recent Additions"
         tracks = await storage.load_playlist()
