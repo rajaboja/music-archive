@@ -51,7 +51,7 @@ function setupCleanSpreadsheetTrigger() {
     // Create new trigger - directly use syncCleanSpreadsheet as handler
     ScriptApp.newTrigger('syncCleanSpreadsheet')
         .forSpreadsheet(processedSpreadsheet)
-        .onChange()
+        .onEdit()
         .create();
     
     Logger.log('Clean spreadsheet trigger setup completed');
