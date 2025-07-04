@@ -70,7 +70,8 @@ export class PlaylistManager {
     
     // Remove track when clicked
     removeButton.addEventListener('click', (e) => {
-      this.handleRemoveFromPlaylist(e, videoId, li);
+      e.stopPropagation();
+      this.removeFromPlaylist(videoId);
     });
     
     return removeButton;
