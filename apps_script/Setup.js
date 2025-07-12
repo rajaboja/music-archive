@@ -12,8 +12,7 @@ function setup() {
   allTriggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
   Logger.log(`Deleted ${allTriggers.length} existing triggers`);
   
-  // Initialize configuration
-  initializeConfig();
+  // Get configuration values
   const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
   const processedSpreadsheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID'));
   

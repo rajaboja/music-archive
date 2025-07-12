@@ -83,8 +83,6 @@ function removeVideoFromPlaylist(videoId) {
 }
 
 function syncToYouTubePlaylist() {
-  initializeConfig();
-  
   // Create playlist if it doesn't exist
   if (!getConfig('ENV.PLAYLIST_ID')) {
     createPlaylist();

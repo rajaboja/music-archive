@@ -2,7 +2,6 @@
 // Import configuration management - included via Apps Script editor
 
 function updateSpreadsheetDaily() {
-  initializeConfig();
   Logger.log('Starting daily full refresh of videos');
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   

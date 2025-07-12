@@ -177,10 +177,6 @@ class ConfigManager {
 
 const Config = new ConfigManager();
 
-function initializeConfig() {
-  Config.load();
-}
-
 function getConfig(path) {
   return Config.get(path);
 }

@@ -128,8 +128,6 @@ Classification Guidelines:
 }
   
 function processVideos() {
-    initializeConfig(); // Load configuration first
-    
     const sourceSheet = SpreadsheetApp.openById(getConfig('ENV.SOURCE_SPREADSHEET_ID')).getSheets()[0];
     const processedSheet = setupProcessedSheet();
     

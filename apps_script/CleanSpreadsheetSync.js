@@ -4,8 +4,6 @@
 
 function syncCleanSpreadsheet() {
     try {
-        initializeConfig();
-        
         const processedSheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID')).getSheets()[0];
         const cleanSheet = SpreadsheetApp.openById(getConfig('ENV.CLEAN_SPREADSHEET_ID')).getSheets()[0];
         
