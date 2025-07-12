@@ -84,6 +84,12 @@ function removeVideoFromPlaylist(videoId) {
 
 function syncToYouTubePlaylist() {
   initializeConfig();
+  
+  // Create playlist if it doesn't exist
+  if (!getConfig('ENV.PLAYLIST_ID')) {
+    createPlaylist();
+  }
+  
   const sheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID')).getSheets()[0];
   const allSheetRows = sheet.getDataRange().getValues().slice(1);
   
@@ -125,36 +131,4 @@ function syncToYouTubePlaylist() {
       }
     }
   }
-}
-
-function setupPlaylist() {
-  initializeConfig();
-  
-  if (!getConfig('ENV.PLAYLIST_ID')) createPlaylist();
-  if (!getConfig('ENV.PROCESSED_SPREADSHEET_ID')) {
-    throw new Error('Set PROCESSED_SPREADSHEET_ID in script properties');
-  }
-  
-  const triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach(trigger => {
-    if (trigger.getHandlerFunction() === 'syncToYouTubePlaylist') {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  });
-
-  const spreadsheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID'));
-  ScriptApp.newTrigger('syncToYouTubePlaylist')
-    .forSpreadsheet(spreadsheet)
-    .onChange()  
-    .create();
-    
-  const syncHour = getConfig('PLAYLIST.SYNC_HOUR');
-  const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
-  ScriptApp.newTrigger('syncToYouTubePlaylist')
-    .timeBased()
-    .everyDays(intervalDays)
-    .atHour(syncHour)
-    .create();
-    
-  Logger.log('Created onChange and daily triggers for syncToYouTubePlaylist');
 }

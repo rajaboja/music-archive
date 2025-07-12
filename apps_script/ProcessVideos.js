@@ -264,24 +264,3 @@ function sortProcessedSheet(processedSheet) {
         });
     }
 }
-  
-function createDailyProcessingTrigger() {    
-    const processingHour = getConfig('TRIGGERS.PROCESSING_HOUR');
-    const intervalDays = getConfig('TRIGGERS.INTERVAL_DAYS');
-    
-    // Create new daily trigger to run after the raw data is updated
-    ScriptApp.newTrigger('processVideos')
-        .timeBased()
-        .everyDays(intervalDays)
-        .atHour(processingHour)
-        .create();
-    
-    Logger.log('Daily processing trigger created successfully');
-}
-  
-function setupProcessing() {  
-    // Create trigger
-    createDailyProcessingTrigger();
-    
-    Logger.log('Setup completed successfully');
-}

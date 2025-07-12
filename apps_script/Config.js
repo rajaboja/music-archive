@@ -50,14 +50,11 @@ const AppConfig = {
   PLAYLIST: {
     NAME: "T.M. Krishna Music Performances",
     DESCRIPTION: "A curated playlist of T.M. Krishna's music performances. Updated daily.",
-    PRIVACY_STATUS: 'private',
-    SYNC_HOUR: 4
+    PRIVACY_STATUS: 'private'
   },
 
   TRIGGERS: {
-    PROCESSING_HOUR: 2,
-    INTERVAL_DAYS: 1,
-    CLEAN_SYNC_ENABLED: true
+    INTERVAL_DAYS: 1
   },
 
   CACHE: {

@@ -35,25 +35,3 @@ function syncCleanSpreadsheet() {
         throw error;
     }
 }
-
-function setupCleanSpreadsheetTrigger() {
-    initializeConfig();
-    
-    const processedSpreadsheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID'));
-    
-    // Remove existing triggers
-    ScriptApp.getProjectTriggers().forEach(trigger => {
-        if (trigger.getHandlerFunction() === 'syncCleanSpreadsheet') {
-            ScriptApp.deleteTrigger(trigger);
-        }
-    });
-    
-    // Create new trigger - directly use syncCleanSpreadsheet as handler
-    ScriptApp.newTrigger('syncCleanSpreadsheet')
-        .forSpreadsheet(processedSpreadsheet)
-        .onEdit()
-        .create();
-    
-    Logger.log('Clean spreadsheet trigger setup completed');
-    syncCleanSpreadsheet(); // Initial sync
-}
