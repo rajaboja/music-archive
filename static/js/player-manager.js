@@ -123,44 +123,69 @@ export class PlayerManager {
 
   onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
-      const loopMode = this.state.get('loopMode');
-      
-      if (loopMode === CONFIG.LOOP_MODES.SINGLE) {
-        // If looping a single track, replay the current track
-        const player = this.state.get('player');
-        player.seekTo(0);
-        player.playVideo();
-      } else if (loopMode === CONFIG.LOOP_MODES.PLAYLIST) {
-        // Only play from the custom playlist
-        if (this.state.getUserPlaylistLength() > 0) {
-          // Play next track from custom playlist
-          this.playNext();
-        } else {
-          // If playlist is empty, don't play anything
-          this.state.set('isPlaying', false);
-          this.dom.playIcon.style.display = 'block';
-          this.dom.pauseIcon.style.display = 'none';
-        }
-      } else {
-        // Don't automatically play next track
-        this.state.set('isPlaying', false);
-        this.dom.playIcon.style.display = 'block';
-        this.dom.pauseIcon.style.display = 'none';
-      }
+      this.handleTrackEnded();
     }
     
-    // Update play/pause button
-    if (event.data === YT.PlayerState.PLAYING) {
+    // Update play/pause button state
+    this.updatePlayPauseButton(event.data);
+  }
+
+  handleTrackEnded() {
+    const loopMode = this.state.get('loopMode');
+    
+    // Single track loop - replay current track
+    if (loopMode === CONFIG.LOOP_MODES.SINGLE) {
+      const player = this.state.get('player');
+      player.seekTo(0);
+      player.playVideo();
+      return;
+    }
+    
+    // Check if we have a playlist to work with
+    if (this.state.getUserPlaylistLength() === 0) {
+      this.stopPlayback();
+      return;
+    }
+    
+    // Find current track in playlist
+    const currentVideoId = this.state.get('player').getVideoData().video_id;
+    const currentIndex = this.state.findUserPlaylistIndex(currentVideoId);
+    
+    if (currentIndex === -1) {
+      this.stopPlayback();
+      return;
+    }
+    
+    // Check if we're at the last track
+    const isLastTrack = currentIndex === this.state.getUserPlaylistLength() - 1;
+    
+    if (isLastTrack && loopMode === CONFIG.LOOP_MODES.NONE) {
+      // At end of playlist with no loop - stop
+      this.stopPlayback();
+    } else {
+      // Play next track (will loop back to start if needed)
+      this.playNext();
+    }
+  }
+
+  updatePlayPauseButton(playerState) {
+    if (playerState === YT.PlayerState.PLAYING) {
       this.state.set('isPlaying', true);
       this.dom.playIcon.style.display = 'none';
       this.dom.pauseIcon.style.display = 'block';
       this.controlsManager.startProgressInterval();
-    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+    } else if (playerState === YT.PlayerState.PAUSED || playerState === YT.PlayerState.ENDED) {
       this.state.set('isPlaying', false);
       this.dom.playIcon.style.display = 'block';
       this.dom.pauseIcon.style.display = 'none';
       clearInterval(this.state.get('progressInterval'));
     }
+  }
+
+  stopPlayback() {
+    this.state.set('isPlaying', false);
+    this.dom.playIcon.style.display = 'block';
+    this.dom.pauseIcon.style.display = 'none';
   }
 
   togglePlayPause() {
