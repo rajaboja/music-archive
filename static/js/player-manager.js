@@ -44,12 +44,7 @@ export class PlayerManager {
         this.playlistManager.addToPlaylist(videoId, title, false);
       }
       
-      // Ensure video container is visible
-      this.dom.playerContainer.style.display = 'block';
-      this.dom.playerContainer.classList.add('pip');
-      this.dom.playerContainer.style.opacity = '1';
-      this.dom.playerContainer.style.pointerEvents = 'auto';
-      this.state.set('isVideoVisible', true);
+      this._ensureVideoVisible();
       
       // Ensure controls are visible
       this.dom.playerControls.classList.add('active');
@@ -188,48 +183,53 @@ export class PlayerManager {
     this.dom.pauseIcon.style.display = 'none';
   }
 
+  _ensureVideoVisible() {
+    this.dom.playerContainer.style.display = 'block';
+    this.dom.playerContainer.classList.add('pip');
+    this.dom.playerContainer.style.opacity = '1';
+    this.dom.playerContainer.style.pointerEvents = 'auto';
+    this.state.set('isVideoVisible', true);
+  }
+
+  _playFirstTrackFromPlaylist() {
+    const firstTrack = this.state.getUserPlaylistTrack(0);
+    const player = this.state.get('player');
+    
+    this._ensureVideoVisible();
+    player.loadVideoById(firstTrack.videoId);
+    this.playlistManager.highlightPlaylistTrack(firstTrack.videoId);
+  }
+
+  _resumeCurrentTrack() {
+    const player = this.state.get('player');
+    
+    this._ensureVideoVisible();
+    player.playVideo();
+  }
+
   togglePlayPause() {
     const player = this.state.get('player');
     if (!player) return;
     
-    // Check if we have a valid playlist to play from
     const userPlaylistLength = this.state.getUserPlaylistLength();
     if (userPlaylistLength === 0) {
-      // If no playlist, do nothing
       console.log('No tracks in playlist to play');
       return;
     }
     
     if (this.state.get('isPlaying')) {
       player.pauseVideo();
+      return;
+    }
+    
+    // Handle play scenarios
+    const currentVideoId = this.getCurrentVideoId();
+    const isInPlaylist = currentVideoId && this.state.isInUserPlaylist(currentVideoId);
+    
+    if (!isInPlaylist && userPlaylistLength > 0) {
+      this._playFirstTrackFromPlaylist();
     } else {
-      // Check if we have a valid current video
-      const currentVideoId = this.getCurrentVideoId();
-      const isInPlaylist = currentVideoId && this.state.isInUserPlaylist(currentVideoId);
-      
-      if (!isInPlaylist && userPlaylistLength > 0) {
-        // If current video is not in playlist, play the first track from playlist
-        const firstTrack = this.state.getUserPlaylistTrack(0);
-        
-        // Ensure video container is visible
-        this.dom.playerContainer.style.display = 'block';
-        this.dom.playerContainer.classList.add('pip');
-        this.dom.playerContainer.style.opacity = '1';
-        this.dom.playerContainer.style.pointerEvents = 'auto';
-        this.state.set('isVideoVisible', true);
-        
-        player.loadVideoById(firstTrack.videoId);
-        this.playlistManager.highlightPlaylistTrack(firstTrack.videoId);
-      } else {
-        // Ensure video is visible for existing track too
-        this.dom.playerContainer.style.display = 'block';
-        this.dom.playerContainer.classList.add('pip');
-        this.dom.playerContainer.style.opacity = '1';
-        this.dom.playerContainer.style.pointerEvents = 'auto';
-        this.state.set('isVideoVisible', true);
-        
-        player.playVideo();
-      }
+      this._resumeCurrentTrack();
     }
   }
 
