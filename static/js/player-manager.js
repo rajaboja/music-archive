@@ -233,67 +233,51 @@ export class PlayerManager {
     }
   }
 
-  playNext() {
+  _playTrackAtOffset(offset) {
     const player = this.state.get('player');
     const userPlaylistLength = this.state.getUserPlaylistLength();
     
-    // Only play from the playlist - never from Recent Additions
-    if (userPlaylistLength > 0) {
-      const currentVideoId = player.getVideoData().video_id;
-      const currentPlaylistIndex = this.state.findUserPlaylistIndex(currentVideoId);
-      
-      if (currentPlaylistIndex !== -1) {
-        const nextIndex = (currentPlaylistIndex + 1) % userPlaylistLength;
-        const nextTrack = this.state.getUserPlaylistTrack(nextIndex);
-        
-        player.loadVideoById(nextTrack.videoId);
-        this.playlistManager.highlightPlaylistTrack(nextTrack.videoId);
-        
-        // Also highlight in main playlist if it exists there
-        const mainPlaylistIndex = this.dom.tracks.findIndex(track => 
-          track.getAttribute('data-video') === nextTrack.videoId
-        );
-        if (mainPlaylistIndex !== -1) {
-          this.state.set('currentIndex', mainPlaylistIndex);
-          this.playlistManager.highlightTrack(mainPlaylistIndex);
-        } else {
-          // If not in main playlist, clear highlighting
-          this.dom.tracks.forEach(track => track.classList.remove('playing'));
-        }
-      }
+    if (userPlaylistLength === 0) return;
+    
+    const currentVideoId = player.getVideoData().video_id;
+    const currentPlaylistIndex = this.state.findUserPlaylistIndex(currentVideoId);
+    
+    if (currentPlaylistIndex === -1) return;
+    
+    // Calculate target index with wrapping
+    let targetIndex = currentPlaylistIndex + offset;
+    if (targetIndex < 0) {
+      targetIndex = userPlaylistLength - 1;
+    } else if (targetIndex >= userPlaylistLength) {
+      targetIndex = 0;
+    }
+    
+    const targetTrack = this.state.getUserPlaylistTrack(targetIndex);
+    
+    // Load and highlight the target track
+    player.loadVideoById(targetTrack.videoId);
+    this.playlistManager.highlightPlaylistTrack(targetTrack.videoId);
+    
+    // Update main playlist highlighting if track exists there
+    const mainPlaylistIndex = this.dom.tracks.findIndex(track => 
+      track.getAttribute('data-video') === targetTrack.videoId
+    );
+    
+    if (mainPlaylistIndex !== -1) {
+      this.state.set('currentIndex', mainPlaylistIndex);
+      this.playlistManager.highlightTrack(mainPlaylistIndex);
+    } else {
+      // Clear main playlist highlighting if track not found
+      this.dom.tracks.forEach(track => track.classList.remove('playing'));
     }
   }
 
+  playNext() {
+    this._playTrackAtOffset(1);
+  }
+
   playPrevious() {
-    const player = this.state.get('player');
-    const userPlaylistLength = this.state.getUserPlaylistLength();
-    
-    // Only play from the playlist - never from Recent Additions
-    if (userPlaylistLength > 0) {
-      const currentVideoId = player.getVideoData().video_id;
-      const currentPlaylistIndex = this.state.findUserPlaylistIndex(currentVideoId);
-      
-      if (currentPlaylistIndex !== -1) {
-        const prevIndex = currentPlaylistIndex === 0 ? 
-          userPlaylistLength - 1 : currentPlaylistIndex - 1;
-        const prevTrack = this.state.getUserPlaylistTrack(prevIndex);
-        
-        player.loadVideoById(prevTrack.videoId);
-        this.playlistManager.highlightPlaylistTrack(prevTrack.videoId);
-        
-        // Also highlight in main playlist if it exists there
-        const mainPlaylistIndex = this.dom.tracks.findIndex(track => 
-          track.getAttribute('data-video') === prevTrack.videoId
-        );
-        if (mainPlaylistIndex !== -1) {
-          this.state.set('currentIndex', mainPlaylistIndex);
-          this.playlistManager.highlightTrack(mainPlaylistIndex);
-        } else {
-          // If not in main playlist, clear highlighting
-          this.dom.tracks.forEach(track => track.classList.remove('playing'));
-        }
-      }
-    }
+    this._playTrackAtOffset(-1);
   }
 
   getCurrentVideoId() {
