@@ -33,42 +33,44 @@ export class PlayerManager {
   }
 
   initializePlayerWithTrack(index) {
+    const trackData = this._getTrackData(index);
+    
     if (this.state.get('playerInitialized')) {
-      // If player is already initialized, load the track via playlist
-      const videoId = this.dom.tracks[index].getAttribute('data-video');
-      const trackTitle = this.dom.tracks[index].querySelector('.track-title');
-      const title = trackTitle.textContent.trim();
-      
-      // Add to playlist if not already there
-      if (!this.state.isInUserPlaylist(videoId)) {
-        this.playlistManager.addToPlaylist(videoId, title, false);
-      }
-      
-      this._ensureVideoVisible();
-      
-      // Ensure controls are visible
-      this.dom.playerControls.classList.add('active');
-      
-      this.state.get('player').loadVideoById(videoId);
-      this.playlistManager.highlightPlaylistTrack(videoId);
-      this.playlistManager.highlightTrack(index);
-      return;
+      this._loadTrackInExistingPlayer(trackData, index);
+    } else {
+      this._createNewPlayerWithTrack(trackData, index);
     }
-    
-    // Show loading state
-    this.dom.playerContainer.classList.add('pip');
-    this.dom.playerContainer.classList.add('loading');
-    this.dom.playerControls.classList.add('active');
-    
-    // Ensure video is visible when player initializes
-    this.dom.playerContainer.style.opacity = '1';
-    this.dom.playerContainer.style.pointerEvents = 'auto';
-    this.state.set('isVideoVisible', true);
-    
-    // Get data for the track
+  }
+
+  _getTrackData(index) {
     const videoId = this.dom.tracks[index].getAttribute('data-video');
     const trackTitle = this.dom.tracks[index].querySelector('.track-title');
     const title = trackTitle.textContent.trim();
+    
+    return { videoId, title };
+  }
+
+  _loadTrackInExistingPlayer(trackData, index) {
+    const { videoId, title } = trackData;
+    
+    // Add to playlist if not already there
+    if (!this.state.isInUserPlaylist(videoId)) {
+      this.playlistManager.addToPlaylist(videoId, title, false);
+    }
+    
+    this._ensureVideoVisible();
+    this.dom.playerControls.classList.add('active');
+    
+    this.state.get('player').loadVideoById(videoId);
+    this.playlistManager.highlightPlaylistTrack(videoId);
+    this.playlistManager.highlightTrack(index);
+  }
+
+  _createNewPlayerWithTrack(trackData, index) {
+    const { videoId, title } = trackData;
+    
+    // Set up UI for loading state
+    this._setupLoadingState();
     
     // Add to playlist if not already there
     if (!this.state.isInUserPlaylist(videoId)) {
@@ -85,6 +87,17 @@ export class PlayerManager {
     });
     
     this.state.set('player', player);
+  }
+
+  _setupLoadingState() {
+    this.dom.playerContainer.classList.add('pip');
+    this.dom.playerContainer.classList.add('loading');
+    this.dom.playerControls.classList.add('active');
+    
+    // Ensure video is visible when player initializes
+    this.dom.playerContainer.style.opacity = '1';
+    this.dom.playerContainer.style.pointerEvents = 'auto';
+    this.state.set('isVideoVisible', true);
   }
 
   onPlayerReady(event, index, videoId) {
