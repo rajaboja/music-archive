@@ -227,12 +227,9 @@ export class PlaylistManager {
           this.state.get('player').loadVideoById(videoId);
         }
       } else {
-        // Ensure video container is visible when loading from playlist
+        // Ensure player container is configured for playback
         this.dom.playerContainer.style.display = 'block';
         this.dom.playerContainer.classList.add('pip');
-        this.dom.playerContainer.style.opacity = '1';
-        this.dom.playerContainer.style.pointerEvents = 'auto';
-        this.state.set('isVideoVisible', true);
         
         // Ensure controls are visible
         this.dom.playerControls.classList.add('active');

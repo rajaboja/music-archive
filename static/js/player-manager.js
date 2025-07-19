@@ -58,7 +58,6 @@ export class PlayerManager {
       this.playlistManager.addToPlaylist(videoId, title, false);
     }
     
-    this._ensureVideoVisible();
     this.dom.playerControls.classList.add('active');
     
     this.state.get('player').loadVideoById(videoId);
@@ -196,19 +195,10 @@ export class PlayerManager {
     this.dom.pauseIcon.style.display = 'none';
   }
 
-  _ensureVideoVisible() {
-    this.dom.playerContainer.style.display = 'block';
-    this.dom.playerContainer.classList.add('pip');
-    this.dom.playerContainer.style.opacity = '1';
-    this.dom.playerContainer.style.pointerEvents = 'auto';
-    this.state.set('isVideoVisible', true);
-  }
-
   _playFirstTrackFromPlaylist() {
     const firstTrack = this.state.getUserPlaylistTrack(0);
     const player = this.state.get('player');
     
-    this._ensureVideoVisible();
     player.loadVideoById(firstTrack.videoId);
     this.playlistManager.highlightPlaylistTrack(firstTrack.videoId);
   }
@@ -216,7 +206,6 @@ export class PlayerManager {
   _resumeCurrentTrack() {
     const player = this.state.get('player');
     
-    this._ensureVideoVisible();
     player.playVideo();
   }
 
