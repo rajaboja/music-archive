@@ -198,24 +198,26 @@ export class ControlsManager {
 
   updateProgressBar() {
     const player = this.state.get('player');
-    if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
-      const currentTime = player.getCurrentTime() || 0;
-      const duration = player.getDuration() || 0;
-      
-      if (duration > 0) {
-        // Update progress bar
-        const percent = (currentTime / duration) * 100;
-        this.dom.progressBar.style.width = `${percent}%`;
-        
-        // Update progress bar aria attributes
-        this.dom.progressContainer.setAttribute('aria-valuenow', Math.round(percent));
-        this.dom.progressContainer.setAttribute('aria-valuemin', '0');
-        this.dom.progressContainer.setAttribute('aria-valuemax', '100');
-        
-        // Update time display
-        this.dom.timeDisplay.textContent = `${this.formatTime(currentTime)} / ${this.formatTime(duration)}`;
-      }
+    if (!player) return;
+    
+    const currentTime = player.getCurrentTime() || 0;
+    const duration = player.getDuration() || 0;
+    
+    if (!duration) {
+      return;
     }
+    
+    // Update progress bar
+    const percent = (currentTime / duration) * 100;
+    this.dom.progressBar.style.width = `${percent}%`;
+    
+    // Update progress bar aria attributes
+    this.dom.progressContainer.setAttribute('aria-valuenow', Math.round(percent));
+    this.dom.progressContainer.setAttribute('aria-valuemin', '0');
+    this.dom.progressContainer.setAttribute('aria-valuemax', '100');
+    
+    // Update time display
+    this.dom.timeDisplay.textContent = `${this.formatTime(currentTime)} / ${this.formatTime(duration)}`;
   }
 
   formatTime(seconds) {
