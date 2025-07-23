@@ -77,17 +77,13 @@ export class ControlsManager {
       const volume = parseInt(e.target.value);
       const player = this.state.get('player');
       
+      player.setVolume(volume);
+      
+      // Update mute button state based on volume
       if (volume === 0) {
-        // If volume is set to 0, mute the player
-        player.mute();
         this.dom.volumeButton.classList.add('muted');
       } else {
-        // If player is muted and user is increasing volume, unmute the player
-        if (player.isMuted()) {
-          player.unMute();
-          this.dom.volumeButton.classList.remove('muted');
-        }
-        player.setVolume(volume);
+        this.dom.volumeButton.classList.remove('muted');
       }
     });
     
@@ -172,24 +168,13 @@ export class ControlsManager {
     if (!player) return;
     
     if (player.isMuted()) {
-      // Only unmute if the volume slider isn't at 0
-      if (parseInt(this.dom.volumeSlider.value) === 0) {
-        // If slider is at 0, set it to a reasonable default value
-        this.dom.volumeSlider.value = 20;
-        player.setVolume(20);
-      }
       player.unMute();
-      this.dom.volumeButton.classList.remove('muted');
-      // Restore the previous volume level when unmuting
-      this.dom.volumeSlider.value = player.getVolume();
     } else {
-      // Save current volume before muting
-      const currentVolume = player.getVolume();
       player.mute();
-      this.dom.volumeButton.classList.add('muted');
-      // Set slider to 0 to provide visual feedback
-      this.dom.volumeSlider.value = 0;
     }
+    
+    // Update UI to reflect current state
+    this.updateVolumeUI();
   }
 
   toggleVideoVisibility() {
@@ -258,28 +243,34 @@ export class ControlsManager {
     const currentVolume = player.getVolume();
     const newVolume = Math.min(100, currentVolume + 5);
     
-    // If player is muted and user is increasing volume, unmute the player
-    if (player.isMuted()) {
-      player.unMute();
-      this.dom.volumeButton.classList.remove('muted');
-    }
-    
     player.setVolume(newVolume);
-    this.dom.volumeSlider.value = newVolume;
+    this.updateVolumeUI();
   }
 
   volumeDown() {
     const player = this.state.get('player');
     const currentVolume = player.getVolume();
     const newVolume = Math.max(0, currentVolume - 5);
-    this.dom.volumeSlider.value = newVolume;
     
-    if (newVolume === 0) {
-      // If volume reaches 0, mute the player
-      player.mute();
+    player.setVolume(newVolume);
+    this.updateVolumeUI();
+  }
+
+  updateVolumeUI() {
+    const player = this.state.get('player');
+    if (!player) return;
+    
+    const volume = player.getVolume();
+    const isMuted = player.isMuted();
+    
+    // Update slider to show actual volume (even when muted)
+    this.dom.volumeSlider.value = volume;
+    
+    // Update mute button state
+    if (isMuted) {
       this.dom.volumeButton.classList.add('muted');
     } else {
-      player.setVolume(newVolume);
+      this.dom.volumeButton.classList.remove('muted');
     }
   }
 
