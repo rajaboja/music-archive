@@ -167,47 +167,43 @@ export class PlaylistManager {
   selectNextTrackAfterRemoval(trackIndexBeforeRemoval, wasPlaying) {
     const userPlaylistLength = this.state.getUserPlaylistLength();
     
-    // Using the index we captured before removal, determine the next logical track
-    let nextIndex;
-    
-    // If the track was the last one in the playlist, we loop back to the first
-    // Otherwise, we use the same index (which will now be the "next" track)
-    if (trackIndexBeforeRemoval >= userPlaylistLength) {
-      nextIndex = 0; // Loop back to beginning
-    } else {
-      nextIndex = trackIndexBeforeRemoval; // The track at this index is now the "next" one
-    }
+    // Determine next track index - loop to start if we removed the last track
+    const nextIndex = trackIndexBeforeRemoval >= userPlaylistLength ? 0 : trackIndexBeforeRemoval;
     
     const nextTrack = this.state.getUserPlaylistTrack(nextIndex);
     const player = this.state.get('player');
     
-    // Load video but don't play it (cueVideoById instead of loadVideoById)
+    // Load video but don't play it
     player.cueVideoById(nextTrack.videoId);
     this.highlightPlaylistTrack(nextTrack.videoId);
     
-    // Also highlight in main playlist if it exists there
+    // Handle main playlist highlighting
     const mainPlaylistIndex = this.dom.tracks.findIndex(track => 
       track.getAttribute('data-video') === nextTrack.videoId
     );
+    
     if (mainPlaylistIndex !== -1) {
       this.state.set('currentIndex', mainPlaylistIndex);
       this.highlightTrack(mainPlaylistIndex);
-    } else {
-      // If not in main playlist, clear highlighting
-      this.dom.tracks.forEach(track => track.classList.remove('playing'));
+      return this.handlePlaybackIfWasPlaying(wasPlaying, player);
     }
     
-    // If the previous track was playing, start playing this one too
-    if (wasPlaying) {
-      player.playVideo();
-      // Since we're starting a new track, reset progress display
-      if (this.dom.progressBar) {
-        this.dom.progressBar.style.width = '0%';
-      }
-      // Time display will be updated by the progress interval
-      if (this.controlsManager) {
-        this.controlsManager.startProgressInterval();
-      }
+    // Clear highlighting if not in main playlist
+    this.dom.tracks.forEach(track => track.classList.remove('playing'));
+    this.handlePlaybackIfWasPlaying(wasPlaying, player);
+  }
+
+  handlePlaybackIfWasPlaying(wasPlaying, player) {
+    if (!wasPlaying) return;
+    
+    player.playVideo();
+    
+    if (this.dom.progressBar) {
+      this.dom.progressBar.style.width = '0%';
+    }
+    
+    if (this.controlsManager) {
+      this.controlsManager.startProgressInterval();
     }
   }
 
