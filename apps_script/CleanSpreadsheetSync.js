@@ -1,26 +1,33 @@
-/**
- * Clean Spreadsheet Sync - Simple copy of true music videos
- */
+function transformMusicVideoData(data, isMusicIndex, lengthIndex) {
+    const headers = data[0];
+    const cleanHeaders = headers.slice(0, isMusicIndex);
+    cleanHeaders.push('formatted_duration');
+    
+    const musicRows = data.slice(1)
+        .filter(row => row[isMusicIndex] === true)
+        .map(row => {
+            const cleanRow = row.slice(0, isMusicIndex);
+            const formattedDuration = formatDuration(row[lengthIndex]);
+            cleanRow.push(formattedDuration);
+            return cleanRow;
+        });
+    
+    return { cleanHeaders, musicRows };
+}
 
 function syncCleanSpreadsheet() {
     try {
         const processedSheet = SpreadsheetApp.openById(getConfig('ENV.PROCESSED_SPREADSHEET_ID')).getSheets()[0];
         const cleanSheet = SpreadsheetApp.openById(getConfig('ENV.CLEAN_SPREADSHEET_ID')).getSheets()[0];
         
-        // Get all data from processed sheet
         const data = processedSheet.getDataRange().getValues();
-        const headers = data[0];
         const isMusicIndex = getColumnIndex('IS_MUSIC_VIDEO');
+        const lengthIndex = getColumnIndex('LENGTH');
         
-        // Clear clean sheet and set headers (without is_music_video column)
+        const { cleanHeaders, musicRows } = transformMusicVideoData(data, isMusicIndex, lengthIndex);
+        
         cleanSheet.clear();
-        const cleanHeaders = headers.slice(0, isMusicIndex);
         cleanSheet.getRange(1, 1, 1, cleanHeaders.length).setValues([cleanHeaders]);
-        
-        // Filter and copy only music videos (true rows)
-        const musicRows = data.slice(1)
-            .filter(row => row[isMusicIndex] === true)
-            .map(row => row.slice(0, isMusicIndex)); // Remove is_music_video column
         
         if (musicRows.length > 0) {
             cleanSheet.getRange(2, 1, musicRows.length, cleanHeaders.length).setValues(musicRows);
