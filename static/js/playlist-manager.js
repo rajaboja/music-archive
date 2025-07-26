@@ -208,40 +208,52 @@ export class PlaylistManager {
   }
 
   handlePlaylistItemClick(videoId) {
-    if (this.state.get('playerReady')) {
-      if (!this.state.get('playerInitialized')) {
-        // Find the index in the original tracks list
-        const originalIndex = this.dom.tracks.findIndex(t => 
-          t.getAttribute('data-video') === videoId
-        );
-        if (originalIndex >= 0) {
-          this.playerManager.initializePlayerWithTrack(originalIndex);
-        } else {
-          // If not in original list, create a temp option
-          const tempIndex = this.state.get('currentIndex');
-          this.state.set('currentIndex', -1); // Special flag
-          this.state.get('player').loadVideoById(videoId);
-        }
-      } else {
-        // Ensure player container is configured for playback
-        this.dom.playerContainer.style.display = 'block';
-        this.dom.playerContainer.classList.add('pip');
-        
-        // Ensure controls are visible
-        this.dom.playerControls.classList.add('active');
-        
-        this.state.get('player').loadVideoById(videoId);
-        this.highlightPlaylistTrack(videoId);
-        
-        // Also highlight in main playlist if the track exists there
-        const originalIndex = this.dom.tracks.findIndex(t => 
-          t.getAttribute('data-video') === videoId
-        );
-        if (originalIndex >= 0) {
-          this.state.set('currentIndex', originalIndex);
-          this.highlightTrack(originalIndex);
-        }
-      }
+    if (!this.state.get('playerReady')) {
+      return;
+    }
+
+    if (!this.state.get('playerInitialized')) {
+      this.handleUninitializedPlayer(videoId);
+      return;
+    }
+
+    this.handleInitializedPlayer(videoId);
+  }
+
+  handleUninitializedPlayer(videoId) {
+    const originalIndex = this.dom.tracks.findIndex(t => 
+      t.getAttribute('data-video') === videoId
+    );
+    
+    if (originalIndex >= 0) {
+      this.playerManager.initializePlayerWithTrack(originalIndex);
+      return;
+    }
+
+    // If not in original list, create a temp option
+    this.state.set('currentIndex', -1); // Special flag
+    this.state.get('player').loadVideoById(videoId);
+  }
+
+  handleInitializedPlayer(videoId) {
+    // Ensure player container is configured for playback
+    this.dom.playerContainer.style.display = 'block';
+    this.dom.playerContainer.classList.add('pip');
+    
+    // Ensure controls are visible
+    this.dom.playerControls.classList.add('active');
+    
+    this.state.get('player').loadVideoById(videoId);
+    this.highlightPlaylistTrack(videoId);
+    
+    // Also highlight in main playlist if the track exists there
+    const originalIndex = this.dom.tracks.findIndex(t => 
+      t.getAttribute('data-video') === videoId
+    );
+    
+    if (originalIndex >= 0) {
+      this.state.set('currentIndex', originalIndex);
+      this.highlightTrack(originalIndex);
     }
   }
 
