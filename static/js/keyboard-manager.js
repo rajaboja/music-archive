@@ -1,4 +1,4 @@
-// Keyboard shortcuts management for the TMK player
+// Keyboard shortcuts management for the media player
 import { CONFIG } from './config.js';
 
 export class KeyboardManager {

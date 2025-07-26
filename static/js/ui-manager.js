@@ -1,4 +1,4 @@
-// UI management for the TMK player
+// UI management for the media player
 export class UIManager {
   constructor(stateManager, domElements) {
     this.state = stateManager;

@@ -1,4 +1,4 @@
-// Playlist management for the TMK player
+// Playlist management for the media player
 export class PlaylistManager {
   constructor(stateManager, domElements) {
     this.state = stateManager;

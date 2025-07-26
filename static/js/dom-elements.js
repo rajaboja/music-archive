@@ -1,4 +1,4 @@
-// DOM element references for the TMK player
+// DOM element references for the media player
 export class DOMElements {
   constructor() {
     this.initializeElements();

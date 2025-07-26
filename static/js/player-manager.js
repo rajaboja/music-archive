@@ -1,4 +1,4 @@
-// YouTube player management for the TMK player
+// YouTube player management for the media player
 import { CONFIG } from './config.js';
 
 export class PlayerManager {

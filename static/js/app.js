@@ -1,4 +1,4 @@
-// Main application entry point for the TMK player
+// Main application entry point for the media player
 import { CONFIG } from './config.js';
 import { DOMElements } from './dom-elements.js';
 import { StateManager } from './state-manager.js';
@@ -8,7 +8,7 @@ import { ControlsManager } from './controls-manager.js';
 import { KeyboardManager } from './keyboard-manager.js';
 import { UIManager } from './ui-manager.js';
 
-class TMKPlayer {
+class MediaPlayer {
   constructor() {
     this.initializeApp();
   }
@@ -47,9 +47,9 @@ class TMKPlayer {
       // Set up event listeners
       this.setupEventListeners();
       
-      console.log('TMK Player initialized successfully');
+      console.log('Media Player initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize TMK Player:', error);
+      console.error('Failed to initialize Media Player:', error);
       this.uiManager?.showError('Failed to initialize player. Please refresh the page.');
     }
   }
@@ -89,7 +89,7 @@ class TMKPlayer {
       player.pauseVideo();
     }
     
-    console.log('TMK Player cleaned up');
+    console.log('Media Player cleaned up');
   }
 
   // Public API methods for external access
@@ -192,11 +192,11 @@ class TMKPlayer {
 // Initialize the application when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    window.tmkPlayer = new TMKPlayer();
+    window.mediaPlayer = new MediaPlayer();
   });
 } else {
-  window.tmkPlayer = new TMKPlayer();
+  window.mediaPlayer = new MediaPlayer();
 }
 
 // Export for potential external use
-export default TMKPlayer;
+export default MediaPlayer;

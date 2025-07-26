@@ -1,4 +1,4 @@
-// Controls management for the TMK player
+// Controls management for the media player
 import { CONFIG } from './config.js';
 
 export class ControlsManager {

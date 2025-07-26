@@ -1,4 +1,4 @@
-// Configuration constants for the TMK player
+// Configuration constants for the media player
 export const CONFIG = {
   PLAYER: {
     height: '100%',

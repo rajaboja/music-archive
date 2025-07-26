@@ -1,4 +1,4 @@
-// State management for the TMK player
+// State management for the media player
 import { CONFIG } from './config.js';
 
 export class StateManager {
