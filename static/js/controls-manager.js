@@ -222,8 +222,13 @@ export class ControlsManager {
 
   formatTime(seconds) {
     seconds = Math.floor(seconds);
-    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     seconds = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
 
