@@ -153,6 +153,7 @@ body {
   align-items: center;
   flex: 1;
   min-width: 0; /* Allow text to truncate */
+  gap: 0.75rem;
 }
 
 .play-icon {
@@ -167,6 +168,17 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.track-duration {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  padding: 0.125rem 0.375rem;
+  min-width: 3rem;
+  text-align: center;
 }
 
 .track-controls {

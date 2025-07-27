@@ -4,6 +4,7 @@ from fasthtml.common import *
 def render_track_item(track):
     video_id = track['video_id']
     title = track['title']
+    duration = track.get('formatted_duration', '')
     
     return Li(
         Div(
@@ -15,6 +16,7 @@ def render_track_item(track):
                 **{"aria-hidden": "true"}
             ),
             Span(title, cls="track-title"),
+            Span(duration, cls="track-duration") if duration else None,
             cls="track-info"
         ),
         Div(
