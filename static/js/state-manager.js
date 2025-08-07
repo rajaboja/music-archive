@@ -3,7 +3,12 @@ import { CONFIG } from './config.js';
 
 export class StateManager {
   constructor() {
-    this.state = {
+    this.state = this.getDefaultState();
+  }
+
+  // Default state factory method
+  getDefaultState() {
+    return {
       player: null,
       currentIndex: 0,
       playerReady: false,
@@ -39,18 +44,7 @@ export class StateManager {
 
   // Reset state to defaults
   reset() {
-    this.state = {
-      player: null,
-      currentIndex: 0,
-      playerReady: false,
-      isPlaying: false,
-      loopMode: CONFIG.LOOP_MODES.NONE,
-      pendingTrackIndex: null,
-      playerInitialized: false,
-      progressInterval: null,
-      isVideoVisible: true,
-      userPlaylist: []
-    };
+    this.state = this.getDefaultState();
   }
 
   // Playlist management
