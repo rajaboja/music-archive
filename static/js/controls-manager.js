@@ -1,6 +1,19 @@
 // Controls management for the media player
 import { CONFIG } from './config.js';
 
+// Utility function for time formatting
+function formatTime(seconds) {
+  seconds = Math.floor(seconds);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  seconds = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+}
+
 export class ControlsManager {
   constructor(stateManager, domElements) {
     this.state = stateManager;
@@ -16,81 +29,80 @@ export class ControlsManager {
   }
 
   setupControlButtons() {
-    // Play/Pause button
     this.dom.playPauseButton.addEventListener('click', () => {
       this.playerManager.togglePlayPause();
     });
     
-    // Previous track button
     this.dom.prevTrackButton.addEventListener('click', () => {
       this.playerManager.playPrevious();
     });
     
-    // Next track button
     this.dom.nextTrackButton.addEventListener('click', () => {
       this.playerManager.playNext();
     });
     
-    // Loop button
     this.dom.loopButton.addEventListener('click', () => {
       this.toggleLoop();
     });
   }
 
   setupProgressBar() {
-    // Progress bar click
-    this.dom.progressContainer.addEventListener('click', (e) => {
-      const rect = this.dom.progressContainer.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
-      const duration = this.state.get('player').getDuration();
-      this.state.get('player').seekTo(duration * percent, true);
-    });
+    this.dom.progressContainer.addEventListener('click', (e) => this.handleProgressClick(e));
+    this.dom.progressContainer.addEventListener('mousemove', (e) => this.handleProgressHover(e));
+    this.dom.progressContainer.addEventListener('mouseleave', () => this.handleProgressLeave());
+    this.dom.progressContainer.addEventListener('keydown', (e) => this.handleProgressKeydown(e));
+  }
+
+  setupVolumeControls() {
+    this.dom.volumeSlider.addEventListener('input', (e) => this.handleVolumeSliderInput(e));
+    this.dom.volumeButton.addEventListener('click', () => this.toggleMute());
     
-    // Progress bar hover preview
-    this.dom.progressContainer.addEventListener('mousemove', (e) => {
-      const rect = this.dom.progressContainer.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
-      const duration = this.state.get('player').getDuration();
-      const time = duration * percent;
+    this.setupVolumeSliderBehavior();
+    this.setupVolumeRightClick();
+  }
+
+  setupVideoVisibilityToggle() {
+    this.dom.playerControls.addEventListener('click', (e) => {
+      const playerControlsInner = document.querySelector('.player-controls-inner');
+      const isClickableElement = e.target.closest('.control-button, #volume-container, #progress-container');
       
-      // Update title with hover time
-      this.dom.progressContainer.title = `Seek to ${this.formatTime(time)}`;
-    });
-    
-    this.dom.progressContainer.addEventListener('mouseleave', () => {
-      this.dom.progressContainer.title = 'Click to seek';
-    });
-    
-    // Progress bar keyboard navigation
-    this.dom.progressContainer.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
-        this.seekBackward();
-      } else if (e.key === 'ArrowRight') {
-        this.seekForward();
+      if ((e.target === this.dom.playerControls || e.target === playerControlsInner) || !isClickableElement) {
+        this.toggleVideoVisibility();
       }
     });
   }
 
-  setupVolumeControls() {
-    // Volume slider
-    this.dom.volumeSlider.addEventListener('input', (e) => {
-      const volume = parseInt(e.target.value);
-      const player = this.state.get('player');
-      
-      player.setVolume(volume);
-      
-      // Update mute button state based on volume
-      if (volume === 0) {
-        this.dom.volumeButton.classList.add('muted');
-      } else {
-        this.dom.volumeButton.classList.remove('muted');
-      }
-    });
+  // Progress bar event handlers
+  handleProgressClick(e) {
+    const rect = this.dom.progressContainer.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const duration = this.state.get('player').getDuration();
+    this.state.get('player').seekTo(duration * percent, true);
+  }
+
+  handleProgressHover(e) {
+    const rect = this.dom.progressContainer.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const duration = this.state.get('player').getDuration();
+    const time = duration * percent;
     
-    // Volume button click to toggle mute/unmute
-    this.dom.volumeButton.addEventListener('click', () => this.toggleMute());
-    
-    // Enhanced volume slider behavior with smooth animations
+    this.dom.progressContainer.title = `Seek to ${formatTime(time)}`;
+  }
+
+  handleProgressLeave() {
+    this.dom.progressContainer.title = 'Click to seek';
+  }
+
+  handleProgressKeydown(e) {
+    if (e.key === 'ArrowLeft') {
+      this.seekBackward();
+    } else if (e.key === 'ArrowRight') {
+      this.seekForward();
+    }
+  }
+
+  // Volume control helper methods
+  setupVolumeSliderBehavior() {
     this.dom.volumeContainer.addEventListener('mouseenter', () => {
       clearTimeout(this.volumeTimer);
       this.showVolumeSlider();
@@ -111,8 +123,9 @@ export class ControlsManager {
         this.hideVolumeSlider();
       }, CONFIG.TIMINGS.volumeHideDelay);
     });
-    
-    // Show volume on right-click for easier access
+  }
+
+  setupVolumeRightClick() {
     this.dom.volumeContainer.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       if (this.dom.volumeSliderContainer.classList.contains('show')) {
@@ -127,40 +140,52 @@ export class ControlsManager {
     });
   }
 
-  setupVideoVisibilityToggle() {
-    // Add click handler to player controls to toggle video visibility
-    this.dom.playerControls.addEventListener('click', (e) => {
-      // Only toggle when clicking directly on the controls background or inner container
-      // or when clicking in empty space between controls (not on buttons)
-      const playerControlsInner = document.querySelector('.player-controls-inner');
-      const isClickableElement = e.target.closest('.control-button, #volume-container, #progress-container');
-      
-      if ((e.target === this.dom.playerControls || e.target === playerControlsInner) || !isClickableElement) {
-        this.toggleVideoVisibility();
-      }
-    });
+  handleVolumeSliderInput(e) {
+    const volume = parseInt(e.target.value);
+    const player = this.state.get('player');
+    
+    player.setVolume(volume);
+    this.updateVolumeButtonState(volume === 0);
   }
 
-  toggleLoop() {
-    const currentLoopMode = this.state.get('loopMode');
+  // UI update helper methods
+  updateVolumeButtonState(isMuted) {
+    if (isMuted) {
+      this.dom.volumeButton.classList.add('muted');
+    } else {
+      this.dom.volumeButton.classList.remove('muted');
+    }
+  }
+
+  updateLoopButtonState(loopMode) {
+    this.dom.loopButton.classList.remove('loop-single', 'loop-playlist');
     
-    // Cycle through loop modes: none -> single -> playlist -> none
-    if (currentLoopMode === CONFIG.LOOP_MODES.NONE) {
-      this.state.set('loopMode', CONFIG.LOOP_MODES.SINGLE);
+    if (loopMode === CONFIG.LOOP_MODES.SINGLE) {
       this.dom.loopButton.classList.add('loop-single');
-      this.dom.loopButton.classList.remove('loop-playlist');
       this.dom.loopButton.title = 'Loop Single Track (L)';
-    } else if (currentLoopMode === CONFIG.LOOP_MODES.SINGLE) {
-      this.state.set('loopMode', CONFIG.LOOP_MODES.PLAYLIST);
-      this.dom.loopButton.classList.remove('loop-single');
+    } else if (loopMode === CONFIG.LOOP_MODES.PLAYLIST) {
       this.dom.loopButton.classList.add('loop-playlist');
       this.dom.loopButton.title = 'Loop Playlist (L)';
     } else {
-      this.state.set('loopMode', CONFIG.LOOP_MODES.NONE);
-      this.dom.loopButton.classList.remove('loop-single');
-      this.dom.loopButton.classList.remove('loop-playlist');
       this.dom.loopButton.title = 'No Loop (L)';
     }
+  }
+
+  // Main control methods
+  toggleLoop() {
+    const currentLoopMode = this.state.get('loopMode');
+    let newLoopMode;
+    
+    if (currentLoopMode === CONFIG.LOOP_MODES.NONE) {
+      newLoopMode = CONFIG.LOOP_MODES.SINGLE;
+    } else if (currentLoopMode === CONFIG.LOOP_MODES.SINGLE) {
+      newLoopMode = CONFIG.LOOP_MODES.PLAYLIST;
+    } else {
+      newLoopMode = CONFIG.LOOP_MODES.NONE;
+    }
+    
+    this.state.set('loopMode', newLoopMode);
+    this.updateLoopButtonState(newLoopMode);
   }
 
   toggleMute() {
@@ -173,7 +198,6 @@ export class ControlsManager {
       player.mute();
     }
     
-    // Update UI to reflect current state
     this.updateVolumeUI();
   }
 
@@ -203,33 +227,20 @@ export class ControlsManager {
     const currentTime = player.getCurrentTime() || 0;
     const duration = player.getDuration() || 0;
     
-    if (!duration) {
-      return;
-    }
+    if (!duration) return;
     
-    // Update progress bar
     const percent = (currentTime / duration) * 100;
     this.dom.progressBar.style.width = `${percent}%`;
     
-    // Update progress bar aria attributes
     this.dom.progressContainer.setAttribute('aria-valuenow', Math.round(percent));
     this.dom.progressContainer.setAttribute('aria-valuemin', '0');
     this.dom.progressContainer.setAttribute('aria-valuemax', '100');
     
-    // Update time display
-    this.dom.timeDisplay.textContent = `${this.formatTime(currentTime)} / ${this.formatTime(duration)}`;
+    this.dom.timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
   }
 
   formatTime(seconds) {
-    seconds = Math.floor(seconds);
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    seconds = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    }
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    return formatTime(seconds);
   }
 
   seekBackward() {
@@ -270,15 +281,8 @@ export class ControlsManager {
     const volume = player.getVolume();
     const isMuted = player.isMuted();
     
-    // Update slider to show actual volume (even when muted)
     this.dom.volumeSlider.value = volume;
-    
-    // Update mute button state
-    if (isMuted) {
-      this.dom.volumeButton.classList.add('muted');
-    } else {
-      this.dom.volumeButton.classList.remove('muted');
-    }
+    this.updateVolumeButtonState(isMuted);
   }
 
   showVolumeSlider() {
@@ -289,7 +293,6 @@ export class ControlsManager {
     this.dom.volumeSliderContainer.style.display = 'none';
   }
 
-  // Set references to other managers
   setPlayerManager(playerManager) {
     this.playerManager = playerManager;
   }
