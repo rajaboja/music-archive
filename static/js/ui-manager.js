@@ -1,4 +1,5 @@
 // UI management for the media player
+import { showFeedback } from './utils.js';
 export class UIManager {
   constructor(stateManager, domElements) {
     this.state = stateManager;
@@ -81,50 +82,13 @@ export class UIManager {
     }
   }
 
-  // Utility method to show temporary feedback messages
-  showFeedback(message, type = 'info', duration = 3000) {
-    // Create a temporary feedback element
-    const feedback = document.createElement('div');
-    feedback.className = `feedback feedback-${type}`;
-    feedback.textContent = message;
-    feedback.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--pico-primary-500);
-      color: white;
-      padding: 1rem;
-      border-radius: var(--pico-border-radius);
-      z-index: 10000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    `;
-    
-    document.body.appendChild(feedback);
-    
-    // Show the feedback
-    setTimeout(() => {
-      feedback.style.opacity = '1';
-    }, 10);
-    
-    // Hide and remove the feedback
-    setTimeout(() => {
-      feedback.style.opacity = '0';
-      setTimeout(() => {
-        if (feedback.parentNode) {
-          feedback.parentNode.removeChild(feedback);
-        }
-      }, 300);
-    }, duration);
-  }
-
   // Method to display error messages
   showError(message) {
-    this.showFeedback(message, 'error', 5000);
+    showFeedback(message, 'error', 5000);
   }
 
   // Method to display success messages
   showSuccess(message) {
-    this.showFeedback(message, 'success', 2000);
+    showFeedback(message, 'success', 2000);
   }
 }

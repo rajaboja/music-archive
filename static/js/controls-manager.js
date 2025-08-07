@@ -1,18 +1,6 @@
 // Controls management for the media player
 import { CONFIG } from './config.js';
-
-// Utility function for time formatting
-function formatTime(seconds) {
-  seconds = Math.floor(seconds);
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  seconds = seconds % 60;
-  
-  if (hours > 0) {
-    return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  }
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-}
+import { formatTime } from './utils.js';
 
 export class ControlsManager {
   constructor(stateManager, domElements) {
@@ -237,10 +225,6 @@ export class ControlsManager {
     this.dom.progressContainer.setAttribute('aria-valuemax', '100');
     
     this.dom.timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-  }
-
-  formatTime(seconds) {
-    return formatTime(seconds);
   }
 
   seekBackward() {
