@@ -383,24 +383,54 @@ class MediaPlayer {
   }
 
   createPlaylistItem(videoId, title) {
+    const li = this.createListElement(videoId);
+    const trackInfo = this.createTrackInfo(title);
+    const controls = this.createTrackControls();
+    
+    li.appendChild(trackInfo);
+    li.appendChild(controls);
+    
+    this.attachPlaylistItemEvents(li, videoId);
+    this.elements.customPlaylist.appendChild(li);
+  }
+
+  createListElement(videoId) {
     const li = document.createElement('li');
     li.setAttribute('data-video', videoId);
-    li.innerHTML = `
-      <div class="track-info">
-        <span class="track-title">${title}</span>
-      </div>
-      <div class="track-controls">
-        <button class="remove-btn" title="Remove from playlist">✕</button>
-      </div>
-    `;
+    return li;
+  }
 
+  createTrackInfo(title) {
+    const div = document.createElement('div');
+    div.className = 'track-info';
+    
+    const span = document.createElement('span');
+    span.className = 'track-title';
+    span.textContent = title; // Safe from XSS
+    
+    div.appendChild(span);
+    return div;
+  }
+
+  createTrackControls() {
+    const div = document.createElement('div');
+    div.className = 'track-controls';
+    
+    const removeButton = document.createElement('button');
+    removeButton.className = 'remove-btn';
+    removeButton.title = 'Remove from playlist';
+    removeButton.textContent = '✕';
+    
+    div.appendChild(removeButton);
+    return div;
+  }
+
+  attachPlaylistItemEvents(li, videoId) {
     li.addEventListener('click', () => this.playPlaylistTrackById(videoId));
     li.querySelector('.remove-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       this.removeFromPlaylist(videoId);
     });
-
-    this.elements.customPlaylist.appendChild(li);
   }
 
   removePlaylistItem(videoId) {
