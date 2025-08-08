@@ -160,20 +160,27 @@ class MediaPlayer {
   // Player creation and initialization
   createPlayer(videoId, trackIndex) {
     if (!this.playerReady) {
-      console.log('YouTube API not ready yet');
-      return;
+      console.warn('YouTube API not ready yet');
+      return false;
     }
 
-    this.showLoadingState();
-
-    this.player = new YT.Player('player', {
-      ...CONFIG.PLAYER,
-      videoId: videoId,
-      events: {
-        'onReady': (event) => this.onPlayerReady(event, trackIndex, videoId),
-        'onStateChange': (event) => this.onPlayerStateChange(event)
-      }
-    });
+    try {
+      this.showLoadingState();
+      this.player = new YT.Player('player', {
+        ...CONFIG.PLAYER,
+        videoId,
+        events: {
+          'onReady': (event) => this.onPlayerReady(event, trackIndex, videoId),
+          'onStateChange': (event) => this.onPlayerStateChange(event),
+          'onError': (event) => this.onPlayerError(event)
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to create player:', error);
+      this.hideLoadingState();
+      return false;
+    }
   }
 
   onPlayerReady(event, trackIndex, videoId) {
