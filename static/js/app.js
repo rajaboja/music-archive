@@ -488,9 +488,12 @@ class MediaPlayer {
     if (!this.player) return;
     
     const rect = this.elements.progressContainer.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const duration = this.player.getDuration();
-    this.player.seekTo(duration * percent, true);
+    
+    if (duration > 0) {
+      this.player.seekTo(duration * percent, true);
+    }
   }
 
   handleProgressHover(e) {
