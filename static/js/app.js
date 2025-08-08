@@ -323,24 +323,16 @@ class MediaPlayer {
 
   handleTrackEnded() {
     if (this.loopMode === CONFIG.LOOP_MODES.SINGLE) {
-      this.player.seekTo(0);
-      this.player.playVideo();
+      this.replayCurrentTrack();
       return;
     }
 
-    if (this.playlist.length === 0) {
+    if (!this.canContinuePlayback()) {
       this.updatePlayPauseButtons(false);
       return;
     }
 
-    const currentVideoId = this.getCurrentVideoId();
-    const playlistIndex = this.findPlaylistIndex(currentVideoId);
-    
-    if (playlistIndex === -1) {
-      this.updatePlayPauseButtons(false);
-      return;
-    }
-
+    const playlistIndex = this.findPlaylistIndex(this.getCurrentVideoId());
     const isLastTrack = playlistIndex === this.playlist.length - 1;
     
     if (isLastTrack && this.loopMode === CONFIG.LOOP_MODES.NONE) {
@@ -348,6 +340,15 @@ class MediaPlayer {
     } else {
       this.playNext();
     }
+  }
+
+  replayCurrentTrack() {
+    this.player.seekTo(0);
+    this.player.playVideo();
+  }
+
+  canContinuePlayback() {
+    return this.playlist.length > 0 && this.findPlaylistIndex(this.getCurrentVideoId()) !== -1;
   }
 
   // Playlist management
