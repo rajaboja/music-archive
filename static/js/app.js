@@ -608,7 +608,7 @@ class MediaPlayer {
       const trackEl = button.closest('li');
       if (trackEl?.getAttribute('data-video') !== videoId) return;
       
-      button.innerHTML = isInPlaylist ? '✓' : '+';
+      button.innerHTML = isInPlaylist ? CONFIG.ICONS.REMOVE_FROM_PLAYLIST : CONFIG.ICONS.ADD_TO_PLAYLIST;
       button.title = isInPlaylist ? 'Remove from Playlist' : 'Add to Playlist';
     });
   }
