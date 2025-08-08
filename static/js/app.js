@@ -220,25 +220,39 @@ class MediaPlayer {
 
   // Track playback methods
   playTrack(index) {
-    if (!this.playerReady) return;
+    if (!this.playerReady || !this.isValidTrackIndex(index)) return;
 
-    const videoId = this.elements.tracks[index].getAttribute('data-video');
-    const title = this.elements.tracks[index].querySelector('.track-title').textContent.trim();
-
-    // Add to playlist if not already there
+    const { videoId, title } = this.getTrackData(index);
+    
     if (!this.isInPlaylist(videoId)) {
       this.addToPlaylist(videoId, title, false);
     }
 
     if (this.playerInitialized) {
-      this.player.loadVideoById(videoId);
-      this.highlightTrack(index);
-      this.highlightPlaylistTrack(videoId);
-      this.currentIndex = index;
-      this.showPlayerControls();
+      this.loadExistingPlayerTrack(videoId, index);
     } else {
       this.createPlayer(videoId, index);
     }
+  }
+
+  isValidTrackIndex(index) {
+    return index >= 0 && index < this.elements.tracks.length;
+  }
+
+  getTrackData(index) {
+    const track = this.elements.tracks[index];
+    return {
+      videoId: track.getAttribute('data-video'),
+      title: track.querySelector('.track-title').textContent.trim()
+    };
+  }
+
+  loadExistingPlayerTrack(videoId, index) {
+    this.player.loadVideoById(videoId);
+    this.highlightTrack(index);
+    this.highlightPlaylistTrack(videoId);
+    this.currentIndex = index;
+    this.showPlayerControls();
   }
 
   togglePlayPause() {
