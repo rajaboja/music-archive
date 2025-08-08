@@ -1,190 +1,726 @@
-// Main application entry point for the media player
+// Simplified music player - single file implementation
 import { CONFIG } from './config.js';
-import { DOMElements } from './dom-elements.js';
-import { StateManager } from './state-manager.js';
-import { PlayerManager } from './player-manager.js';
-import { PlaylistManager } from './playlist-manager.js';
-import { ControlsManager } from './controls-manager.js';
-import { KeyboardManager } from './keyboard-manager.js';
-import { UIManager } from './ui-manager.js';
+import { formatTime, showFeedback } from './utils.js';
 
 class MediaPlayer {
   constructor() {
-    this.initializeApp();
+    // Simple state properties instead of StateManager
+    this.player = null;
+    this.playlist = [];
+    this.currentIndex = -1;
+    this.isPlaying = false;
+    this.isVideoVisible = true;
+    this.loopMode = CONFIG.LOOP_MODES.NONE;
+    this.progressInterval = null;
+    this.volumeTimer = null;
+    this.playerReady = false;
+    this.playerInitialized = false;
+
+    this.initializeElements();
+    this.loadYouTubeAPI();
+    this.setupEventListeners();
   }
 
-  initializeApp() {
-    try {
-      // Initialize core components
-      this.domElements = new DOMElements();
-      this.stateManager = new StateManager();
-      this.uiManager = new UIManager(this.stateManager, this.domElements);
-      
-      // Initialize managers
-      this.playlistManager = new PlaylistManager(this.stateManager, this.domElements);
-      this.controlsManager = new ControlsManager(this.stateManager, this.domElements);
-      this.playerManager = new PlayerManager(
-        this.stateManager, 
-        this.domElements, 
-        this.playlistManager, 
-        this.controlsManager
-      );
-      
-      // Set up cross-references between managers
-      this.playlistManager.setPlayerManager(this.playerManager);
-      this.playlistManager.setControlsManager(this.controlsManager);
-      this.controlsManager.setPlayerManager(this.playerManager);
-      
-      // Initialize keyboard shortcuts
-      this.keyboardManager = new KeyboardManager(
-        this.stateManager,
-        this.domElements,
-        this.playerManager,
-        this.controlsManager,
-        this.uiManager
-      );
-      
-      // Set up event listeners
-      this.setupEventListeners();
-      
-      console.log('Media Player initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Media Player:', error);
-      this.uiManager?.showError('Failed to initialize player. Please refresh the page.');
+  // DOM element initialization
+  initializeElements() {
+    this.elements = {
+      playerContainer: document.getElementById('player-container'),
+      playerControls: document.getElementById('player-controls'),
+      player: document.getElementById('player'),
+      playPauseButton: document.getElementById('play-pause'),
+      prevTrackButton: document.getElementById('prev-track'),
+      nextTrackButton: document.getElementById('next-track'),
+      loopButton: document.getElementById('loop-button'),
+      playIcon: document.getElementById('play-icon'),
+      pauseIcon: document.getElementById('pause-icon'),
+      progressContainer: document.getElementById('progress-container'),
+      progressBar: document.getElementById('progress-bar'),
+      timeDisplay: document.getElementById('time-display'),
+      volumeButton: document.getElementById('volume-button'),
+      volumeSlider: document.getElementById('volume-slider'),
+      volumeContainer: document.getElementById('volume-container'),
+      volumeSliderContainer: document.getElementById('volume-slider-container'),
+      playlistButton: document.getElementById('playlist-button'),
+      playlistPanel: document.getElementById('playlist-panel'),
+      customPlaylist: document.getElementById('custom-playlist'),
+      modalOverlay: document.getElementById('modal-overlay'),
+      tracks: [...document.querySelectorAll('#playlist li')]
+    };
+  }
+
+  // YouTube API loading
+  loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) {
+      this.onYouTubeAPIReady();
+      return;
+    }
+
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    window.onYouTubeIframeAPIReady = () => this.onYouTubeAPIReady();
+  }
+
+  onYouTubeAPIReady() {
+    this.playerReady = true;
+    console.log('YouTube API ready');
+  }
+
+  // Event listeners setup
+  setupEventListeners() {
+    // Control buttons
+    this.elements.playPauseButton.addEventListener('click', () => this.togglePlayPause());
+    this.elements.prevTrackButton.addEventListener('click', () => this.playPrevious());
+    this.elements.nextTrackButton.addEventListener('click', () => this.playNext());
+    this.elements.loopButton.addEventListener('click', () => this.toggleLoop());
+
+    // Progress bar
+    this.elements.progressContainer.addEventListener('click', (e) => this.handleProgressClick(e));
+    this.elements.progressContainer.addEventListener('mousemove', (e) => this.handleProgressHover(e));
+    this.elements.progressContainer.addEventListener('mouseleave', () => this.handleProgressLeave());
+
+    // Volume controls
+    this.elements.volumeButton.addEventListener('click', () => this.toggleMute());
+    this.elements.volumeSlider.addEventListener('input', (e) => this.handleVolumeChange(e));
+    this.setupVolumeSliderBehavior();
+
+    // Playlist
+    this.elements.playlistButton.addEventListener('click', () => this.togglePlaylistPanel());
+    this.elements.modalOverlay.addEventListener('click', () => this.togglePlaylistPanel());
+
+    // Track clicks
+    this.elements.tracks.forEach((track, index) => {
+      track.addEventListener('click', () => this.playTrack(index));
+    });
+
+    // Add to playlist buttons
+    document.querySelectorAll('.add-to-playlist').forEach(button => {
+      button.addEventListener('click', (e) => this.handleAddToPlaylistClick(e, button));
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+
+    // Video visibility toggle
+    this.elements.playerControls.addEventListener('click', (e) => {
+      if (e.target.closest('.player-controls-inner')) return;
+      this.toggleVideoVisibility();
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => this.cleanup());
+  }
+
+  // Volume slider show/hide behavior
+  setupVolumeSliderBehavior() {
+    this.elements.volumeContainer.addEventListener('mouseenter', () => {
+      clearTimeout(this.volumeTimer);
+      this.elements.volumeSliderContainer.style.display = 'flex';
+    });
+
+    this.elements.volumeContainer.addEventListener('mouseleave', () => {
+      this.volumeTimer = setTimeout(() => {
+        this.elements.volumeSliderContainer.style.display = 'none';
+      }, CONFIG.TIMINGS.volumeHideDelay);
+    });
+  }
+
+  // Player creation and initialization
+  createPlayer(videoId, trackIndex) {
+    if (!this.playerReady) {
+      console.log('YouTube API not ready yet');
+      return;
+    }
+
+    this.showLoadingState();
+
+    this.player = new YT.Player('player', {
+      ...CONFIG.PLAYER,
+      videoId: videoId,
+      events: {
+        'onReady': (event) => this.onPlayerReady(event, trackIndex, videoId),
+        'onStateChange': (event) => this.onPlayerStateChange(event)
+      }
+    });
+  }
+
+  onPlayerReady(event, trackIndex, videoId) {
+    this.playerInitialized = true;
+    this.hideLoadingState();
+    
+    event.target.playVideo();
+    
+    setTimeout(() => {
+      const isPlaying = this.player.getPlayerState() === YT.PlayerState.PLAYING;
+      this.updatePlayPauseButtons(isPlaying);
+      if (isPlaying) this.startProgressInterval();
+    }, CONFIG.TIMINGS.playAttemptDelay);
+
+    this.highlightTrack(trackIndex);
+    this.highlightPlaylistTrack(videoId);
+    this.currentIndex = trackIndex;
+  }
+
+  onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+      this.handleTrackEnded();
+    }
+    this.updatePlayPauseButtons(event.data === YT.PlayerState.PLAYING);
+    
+    if (event.data === YT.PlayerState.PLAYING) {
+      this.startProgressInterval();
+    } else {
+      clearInterval(this.progressInterval);
     }
   }
 
-  setupEventListeners() {
-    // Set up playlist buttons and track click handlers
-    this.playlistManager.setupPlaylistButtons();
-    this.playlistManager.setupTrackClickHandlers();
-    
-    // Handle page visibility changes
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        // Page is hidden, could pause video if desired
-        console.log('Page hidden');
+  // Track playback methods
+  playTrack(index) {
+    if (!this.playerReady) return;
+
+    const videoId = this.elements.tracks[index].getAttribute('data-video');
+    const title = this.elements.tracks[index].querySelector('.track-title').textContent.trim();
+
+    // Add to playlist if not already there
+    if (!this.isInPlaylist(videoId)) {
+      this.addToPlaylist(videoId, title, false);
+    }
+
+    if (this.playerInitialized) {
+      this.player.loadVideoById(videoId);
+      this.highlightTrack(index);
+      this.highlightPlaylistTrack(videoId);
+      this.currentIndex = index;
+      this.showPlayerControls();
+    } else {
+      this.createPlayer(videoId, index);
+    }
+  }
+
+  togglePlayPause() {
+    if (!this.player) return;
+
+    if (this.playlist.length === 0) {
+      console.log('No tracks in playlist');
+      return;
+    }
+
+    if (this.isPlaying) {
+      this.player.pauseVideo();
+    } else {
+      const currentVideoId = this.getCurrentVideoId();
+      if (!currentVideoId || !this.isInPlaylist(currentVideoId)) {
+        // Play first track from playlist
+        this.playPlaylistTrack(0);
       } else {
-        // Page is visible again
-        console.log('Page visible');
+        this.player.playVideo();
       }
+    }
+  }
+
+  playNext() {
+    if (this.playlist.length === 0) return;
+    
+    const currentVideoId = this.getCurrentVideoId();
+    const playlistIndex = this.findPlaylistIndex(currentVideoId);
+    
+    if (playlistIndex === -1) return;
+    
+    let nextIndex = playlistIndex + 1;
+    if (nextIndex >= this.playlist.length) {
+      nextIndex = 0;
+    }
+    
+    this.playPlaylistTrack(nextIndex);
+  }
+
+  playPrevious() {
+    if (this.playlist.length === 0) return;
+    
+    const currentVideoId = this.getCurrentVideoId();
+    const playlistIndex = this.findPlaylistIndex(currentVideoId);
+    
+    if (playlistIndex === -1) return;
+    
+    let prevIndex = playlistIndex - 1;
+    if (prevIndex < 0) {
+      prevIndex = this.playlist.length - 1;
+    }
+    
+    this.playPlaylistTrack(prevIndex);
+  }
+
+  playPlaylistTrack(playlistIndex) {
+    const track = this.playlist[playlistIndex];
+    if (!track) return;
+
+    this.player.loadVideoById(track.videoId);
+    this.highlightPlaylistTrack(track.videoId);
+    
+    // Update main playlist highlighting if track exists there
+    const mainIndex = this.elements.tracks.findIndex(t => 
+      t.getAttribute('data-video') === track.videoId
+    );
+    if (mainIndex !== -1) {
+      this.highlightTrack(mainIndex);
+      this.currentIndex = mainIndex;
+    } else {
+      this.clearMainPlaylistHighlighting();
+    }
+  }
+
+  handleTrackEnded() {
+    if (this.loopMode === CONFIG.LOOP_MODES.SINGLE) {
+      this.player.seekTo(0);
+      this.player.playVideo();
+      return;
+    }
+
+    if (this.playlist.length === 0) {
+      this.updatePlayPauseButtons(false);
+      return;
+    }
+
+    const currentVideoId = this.getCurrentVideoId();
+    const playlistIndex = this.findPlaylistIndex(currentVideoId);
+    
+    if (playlistIndex === -1) {
+      this.updatePlayPauseButtons(false);
+      return;
+    }
+
+    const isLastTrack = playlistIndex === this.playlist.length - 1;
+    
+    if (isLastTrack && this.loopMode === CONFIG.LOOP_MODES.NONE) {
+      this.updatePlayPauseButtons(false);
+    } else {
+      this.playNext();
+    }
+  }
+
+  // Playlist management
+  addToPlaylist(videoId, title, showPanel = false) {
+    if (this.isInPlaylist(videoId)) return;
+
+    this.playlist.push({ videoId, title });
+    this.createPlaylistItem(videoId, title);
+    this.updateAllPlaylistButtons(videoId, true);
+    
+    if (showPanel) {
+      this.togglePlaylistPanel();
+    }
+  }
+
+  removeFromPlaylist(videoId) {
+    const index = this.findPlaylistIndex(videoId);
+    if (index === -1) return;
+
+    const wasCurrentTrack = this.getCurrentVideoId() === videoId;
+    
+    this.playlist.splice(index, 1);
+    this.removePlaylistItem(videoId);
+    this.updateAllPlaylistButtons(videoId, false);
+
+    if (wasCurrentTrack && this.playlist.length > 0) {
+      const nextIndex = index >= this.playlist.length ? 0 : index;
+      this.playPlaylistTrack(nextIndex);
+    } else if (this.playlist.length === 0) {
+      this.stopPlayback();
+    }
+  }
+
+  createPlaylistItem(videoId, title) {
+    const li = document.createElement('li');
+    li.setAttribute('data-video', videoId);
+    li.innerHTML = `
+      <div class="track-info">
+        <span class="track-title">${title}</span>
+      </div>
+      <div class="track-controls">
+        <button class="remove-btn" title="Remove from playlist">✕</button>
+      </div>
+    `;
+
+    li.addEventListener('click', () => this.playPlaylistTrackById(videoId));
+    li.querySelector('.remove-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.removeFromPlaylist(videoId);
     });
 
-    // Handle window beforeunload for cleanup
-    window.addEventListener('beforeunload', () => {
-      this.cleanup();
+    this.elements.customPlaylist.appendChild(li);
+  }
+
+  removePlaylistItem(videoId) {
+    const item = this.elements.customPlaylist.querySelector(`li[data-video="${videoId}"]`);
+    if (item) item.remove();
+  }
+
+  playPlaylistTrackById(videoId) {
+    const index = this.findPlaylistIndex(videoId);
+    if (index !== -1) {
+      this.playPlaylistTrack(index);
+    }
+  }
+
+  // Control methods
+  toggleLoop() {
+    if (this.loopMode === CONFIG.LOOP_MODES.NONE) {
+      this.loopMode = CONFIG.LOOP_MODES.SINGLE;
+    } else if (this.loopMode === CONFIG.LOOP_MODES.SINGLE) {
+      this.loopMode = CONFIG.LOOP_MODES.PLAYLIST;
+    } else {
+      this.loopMode = CONFIG.LOOP_MODES.NONE;
+    }
+    this.updateLoopButtonUI();
+  }
+
+  toggleMute() {
+    if (!this.player) return;
+    
+    if (this.player.isMuted()) {
+      this.player.unMute();
+    } else {
+      this.player.mute();
+    }
+    this.updateVolumeUI();
+  }
+
+  toggleVideoVisibility() {
+    this.isVideoVisible = !this.isVideoVisible;
+    
+    if (this.isVideoVisible) {
+      this.elements.playerContainer.style.opacity = '1';
+      this.elements.playerContainer.style.pointerEvents = 'auto';
+    } else {
+      this.elements.playerContainer.style.opacity = '0';
+      this.elements.playerContainer.style.pointerEvents = 'none';
+    }
+  }
+
+  togglePlaylistPanel() {
+    const isActive = this.elements.playlistPanel.classList.contains('active');
+    
+    if (isActive) {
+      this.elements.playlistPanel.classList.remove('active');
+      document.body.style.overflow = '';
+    } else {
+      this.elements.playlistPanel.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  // Progress and volume handling
+  handleProgressClick(e) {
+    if (!this.player) return;
+    
+    const rect = this.elements.progressContainer.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const duration = this.player.getDuration();
+    this.player.seekTo(duration * percent, true);
+  }
+
+  handleProgressHover(e) {
+    if (!this.player) return;
+    
+    const rect = this.elements.progressContainer.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const duration = this.player.getDuration();
+    const time = duration * percent;
+    
+    this.elements.progressContainer.title = `Seek to ${formatTime(time)}`;
+  }
+
+  handleProgressLeave() {
+    this.elements.progressContainer.title = 'Click to seek';
+  }
+
+  handleVolumeChange(e) {
+    if (!this.player) return;
+    
+    const volume = parseInt(e.target.value);
+    this.player.setVolume(volume);
+    this.updateVolumeButtonState(volume === 0);
+  }
+
+  handleAddToPlaylistClick(e, button) {
+    e.stopPropagation();
+    
+    const trackEl = button.closest('li');
+    const videoId = trackEl.getAttribute('data-video');
+    const title = trackEl.querySelector('.track-title').textContent.trim();
+    
+    if (this.isInPlaylist(videoId)) {
+      this.removeFromPlaylist(videoId);
+    } else {
+      this.addToPlaylist(videoId, title);
+    }
+  }
+
+  // Keyboard shortcuts
+  handleKeyboardShortcuts(e) {
+    if (this.elements.playlistPanel.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        this.togglePlaylistPanel();
+      }
+      return;
+    }
+
+    if (!this.elements.playerControls.classList.contains('active')) return;
+
+    const action = CONFIG.KEYBOARD.shortcuts[e.code];
+    if (!action) return;
+
+    e.preventDefault();
+
+    switch (action) {
+      case 'togglePlayPause': this.togglePlayPause(); break;
+      case 'playNext': this.playNext(); break;
+      case 'playPrevious': this.playPrevious(); break;
+      case 'toggleLoop': this.toggleLoop(); break;
+      case 'toggleVideoVisibility': this.toggleVideoVisibility(); break;
+      case 'seekBackward': this.seekBackward(); break;
+      case 'seekForward': this.seekForward(); break;
+      case 'volumeUp': this.volumeUp(); break;
+      case 'volumeDown': this.volumeDown(); break;
+    }
+  }
+
+  // UI update methods
+  updatePlayPauseButtons(isPlaying) {
+    this.isPlaying = isPlaying;
+    
+    if (isPlaying) {
+      this.elements.playIcon.style.display = 'none';
+      this.elements.pauseIcon.style.display = 'block';
+    } else {
+      this.elements.playIcon.style.display = 'block';
+      this.elements.pauseIcon.style.display = 'none';
+    }
+  }
+
+  updateLoopButtonUI() {
+    this.elements.loopButton.classList.remove('loop-single', 'loop-playlist');
+    
+    if (this.loopMode === CONFIG.LOOP_MODES.SINGLE) {
+      this.elements.loopButton.classList.add('loop-single');
+      this.elements.loopButton.title = 'Loop Single Track (L)';
+    } else if (this.loopMode === CONFIG.LOOP_MODES.PLAYLIST) {
+      this.elements.loopButton.classList.add('loop-playlist');
+      this.elements.loopButton.title = 'Loop Playlist (L)';
+    } else {
+      this.elements.loopButton.title = 'No Loop (L)';
+    }
+  }
+
+  updateVolumeUI() {
+    if (!this.player) return;
+    
+    const volume = this.player.getVolume();
+    const isMuted = this.player.isMuted();
+    
+    this.elements.volumeSlider.value = volume;
+    this.updateVolumeButtonState(isMuted);
+  }
+
+  updateVolumeButtonState(isMuted) {
+    if (isMuted) {
+      this.elements.volumeButton.classList.add('muted');
+    } else {
+      this.elements.volumeButton.classList.remove('muted');
+    }
+  }
+
+  updateAllPlaylistButtons(videoId, isInPlaylist) {
+    document.querySelectorAll('.add-to-playlist').forEach(button => {
+      const trackEl = button.closest('li');
+      if (trackEl.getAttribute('data-video') === videoId) {
+        if (isInPlaylist) {
+          button.innerHTML = '✓';
+          button.title = 'Remove from Playlist';
+        } else {
+          button.innerHTML = '+';
+          button.title = 'Add to Playlist';
+        }
+      }
     });
+  }
+
+  highlightTrack(index) {
+    this.elements.tracks.forEach((track, i) => {
+      track.classList.toggle('playing', i === index);
+    });
+  }
+
+  highlightPlaylistTrack(videoId) {
+    const allTracks = this.elements.customPlaylist.querySelectorAll('li');
+    allTracks.forEach(track => track.classList.remove('playing'));
+    
+    const currentTrack = this.elements.customPlaylist.querySelector(`li[data-video="${videoId}"]`);
+    if (currentTrack) {
+      currentTrack.classList.add('playing');
+    }
+  }
+
+  clearMainPlaylistHighlighting() {
+    this.elements.tracks.forEach(track => track.classList.remove('playing'));
+  }
+
+  // Progress tracking
+  startProgressInterval() {
+    clearInterval(this.progressInterval);
+    this.progressInterval = setInterval(() => this.updateProgressBar(), CONFIG.TIMINGS.progressUpdateInterval);
+  }
+
+  updateProgressBar() {
+    if (!this.player) return;
+    
+    const currentTime = this.player.getCurrentTime() || 0;
+    const duration = this.player.getDuration() || 0;
+    
+    if (!duration) return;
+    
+    const percent = (currentTime / duration) * 100;
+    this.elements.progressBar.style.width = `${percent}%`;
+    this.elements.timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+  }
+
+  // Utility methods
+  showLoadingState() {
+    this.elements.playerContainer.classList.add('pip', 'loading');
+    this.elements.playerControls.classList.add('active');
+    this.elements.playerContainer.style.opacity = '1';
+    this.elements.playerContainer.style.pointerEvents = 'auto';
+    this.isVideoVisible = true;
+  }
+
+  hideLoadingState() {
+    this.elements.playerContainer.classList.remove('loading');
+  }
+
+  showPlayerControls() {
+    this.elements.playerControls.classList.add('active');
+  }
+
+  stopPlayback() {
+    if (this.player) {
+      this.player.stopVideo();
+    }
+    this.updatePlayPauseButtons(false);
+    this.clearMainPlaylistHighlighting();
+    this.elements.playerContainer.classList.remove('pip');
+    this.elements.playerContainer.style.display = 'none';
+    this.isVideoVisible = false;
+  }
+
+  seekBackward() {
+    if (!this.player) return;
+    const currentTime = this.player.getCurrentTime();
+    this.player.seekTo(Math.max(0, currentTime - 5), true);
+  }
+
+  seekForward() {
+    if (!this.player) return;
+    const currentTime = this.player.getCurrentTime();
+    const duration = this.player.getDuration();
+    this.player.seekTo(Math.min(duration, currentTime + 5), true);
+  }
+
+  volumeUp() {
+    if (!this.player) return;
+    const currentVolume = this.player.getVolume();
+    const newVolume = Math.min(100, currentVolume + 5);
+    this.player.setVolume(newVolume);
+    this.updateVolumeUI();
+  }
+
+  volumeDown() {
+    if (!this.player) return;
+    const currentVolume = this.player.getVolume();
+    const newVolume = Math.max(0, currentVolume - 5);
+    this.player.setVolume(newVolume);
+    this.updateVolumeUI();
+  }
+
+  getCurrentVideoId() {
+    if (!this.player || !this.player.getVideoData) return null;
+    const videoData = this.player.getVideoData();
+    return videoData ? videoData.video_id : null;
+  }
+
+  isInPlaylist(videoId) {
+    return this.playlist.some(track => track.videoId === videoId);
+  }
+
+  findPlaylistIndex(videoId) {
+    return this.playlist.findIndex(track => track.videoId === videoId);
   }
 
   cleanup() {
-    // Clear any intervals
-    const progressInterval = this.stateManager.get('progressInterval');
-    if (progressInterval) {
-      clearInterval(progressInterval);
+    clearInterval(this.progressInterval);
+    clearTimeout(this.volumeTimer);
+    if (this.player && this.isPlaying) {
+      this.player.pauseVideo();
     }
-    
-    // Pause video if playing
-    const player = this.stateManager.get('player');
-    if (player && this.stateManager.get('isPlaying')) {
-      player.pauseVideo();
-    }
-    
     console.log('Media Player cleaned up');
   }
 
   // Public API methods for external access
   getState() {
-    return this.stateManager.getState();
+    return {
+      player: this.player,
+      playlist: this.playlist,
+      currentIndex: this.currentIndex,
+      isPlaying: this.isPlaying,
+      loopMode: this.loopMode
+    };
   }
 
   getPlayer() {
-    return this.stateManager.get('player');
+    return this.player;
   }
 
   getUserPlaylist() {
-    return this.stateManager.get('userPlaylist');
+    return this.playlist;
   }
 
   addTrackToPlaylist(videoId, title) {
-    this.playlistManager.addToPlaylist(videoId, title);
+    this.addToPlaylist(videoId, title);
   }
 
   removeTrackFromPlaylist(videoId) {
-    this.playlistManager.removeFromPlaylist(videoId);
-  }
-
-  playTrack(index) {
-    if (this.stateManager.get('playerReady')) {
-      this.playerManager.initializePlayerWithTrack(index);
-    } else {
-      this.stateManager.set('pendingTrackIndex', index);
-    }
-  }
-
-  togglePlayPause() {
-    this.playerManager.togglePlayPause();
-  }
-
-  playNext() {
-    this.playerManager.playNext();
-  }
-
-  playPrevious() {
-    this.playerManager.playPrevious();
+    this.removeFromPlaylist(videoId);
   }
 
   setLoopMode(mode) {
     if (Object.values(CONFIG.LOOP_MODES).includes(mode)) {
-      this.stateManager.set('loopMode', mode);
-      // Update UI to reflect the change
-      this.updateLoopButtonUI(mode);
+      this.loopMode = mode;
+      this.updateLoopButtonUI();
     }
   }
 
-  updateLoopButtonUI(mode) {
-    const loopButton = this.domElements.loopButton;
-    loopButton.classList.remove('loop-single', 'loop-playlist');
-    
-    switch (mode) {
-      case CONFIG.LOOP_MODES.SINGLE:
-        loopButton.classList.add('loop-single');
-        loopButton.title = 'Loop Single Track (L)';
-        break;
-      case CONFIG.LOOP_MODES.PLAYLIST:
-        loopButton.classList.add('loop-playlist');
-        loopButton.title = 'Loop Playlist (L)';
-        break;
-      default:
-        loopButton.title = 'No Loop (L)';
-    }
-  }
-
-  // Volume control methods
   setVolume(volume) {
-    const player = this.stateManager.get('player');
-    if (player && volume >= 0 && volume <= 100) {
-      player.setVolume(volume);
-      this.domElements.volumeSlider.value = volume;
+    if (this.player && volume >= 0 && volume <= 100) {
+      this.player.setVolume(volume);
+      this.elements.volumeSlider.value = volume;
     }
   }
 
   mute() {
-    this.controlsManager.toggleMute();
+    this.toggleMute();
   }
 
-  // Seeking methods
   seekTo(seconds) {
-    const player = this.stateManager.get('player');
-    if (player) {
-      player.seekTo(seconds, true);
+    if (this.player) {
+      this.player.seekTo(seconds, true);
     }
   }
 
   seekToPercent(percent) {
-    const player = this.stateManager.get('player');
-    if (player && percent >= 0 && percent <= 100) {
-      const duration = player.getDuration();
-      player.seekTo((duration * percent) / 100, true);
+    if (this.player && percent >= 0 && percent <= 100) {
+      const duration = this.player.getDuration();
+      this.player.seekTo((duration * percent) / 100, true);
     }
   }
 }
@@ -198,5 +734,4 @@ if (document.readyState === 'loading') {
   window.mediaPlayer = new MediaPlayer();
 }
 
-// Export for potential external use
 export default MediaPlayer;
