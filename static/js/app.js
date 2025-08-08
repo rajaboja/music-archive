@@ -200,23 +200,20 @@ class MediaPlayer {
   }
 
   togglePlayPause() {
-    if (!this.player) return;
-
-    if (this.playlist.length === 0) {
-      console.log('No tracks in playlist');
-      return;
-    }
+    if (!this.player || this.playlist.length === 0) return;
 
     if (this.isPlaying) {
       this.player.pauseVideo();
+      return;
+    }
+
+    const currentVideoId = this.getCurrentVideoId();
+    const shouldPlayFirstTrack = !currentVideoId || !this.isInPlaylist(currentVideoId);
+    
+    if (shouldPlayFirstTrack) {
+      this.playPlaylistTrack(0);
     } else {
-      const currentVideoId = this.getCurrentVideoId();
-      if (!currentVideoId || !this.isInPlaylist(currentVideoId)) {
-        // Play first track from playlist
-        this.playPlaylistTrack(0);
-      } else {
-        this.player.playVideo();
-      }
+      this.player.playVideo();
     }
   }
 
@@ -461,9 +458,7 @@ class MediaPlayer {
   // Keyboard shortcuts
   handleKeyboardShortcuts(e) {
     if (this.elements.playlistPanel.classList.contains('active')) {
-      if (e.key === 'Escape') {
-        this.togglePlaylistPanel();
-      }
+      if (e.key === 'Escape') this.togglePlaylistPanel();
       return;
     }
 
@@ -473,18 +468,7 @@ class MediaPlayer {
     if (!action) return;
 
     e.preventDefault();
-
-    switch (action) {
-      case 'togglePlayPause': this.togglePlayPause(); break;
-      case 'playNext': this.playNext(); break;
-      case 'playPrevious': this.playPrevious(); break;
-      case 'toggleLoop': this.toggleLoop(); break;
-      case 'toggleVideoVisibility': this.toggleVideoVisibility(); break;
-      case 'seekBackward': this.seekBackward(); break;
-      case 'seekForward': this.seekForward(); break;
-      case 'volumeUp': this.volumeUp(); break;
-      case 'volumeDown': this.volumeDown(); break;
-    }
+    this[action]?.();
   }
 
   // UI update methods
@@ -533,17 +517,14 @@ class MediaPlayer {
   }
 
   updateAllPlaylistButtons(videoId, isInPlaylist) {
-    document.querySelectorAll('.add-to-playlist').forEach(button => {
+    const buttons = document.querySelectorAll('.add-to-playlist');
+    
+    buttons.forEach(button => {
       const trackEl = button.closest('li');
-      if (trackEl.getAttribute('data-video') === videoId) {
-        if (isInPlaylist) {
-          button.innerHTML = '✓';
-          button.title = 'Remove from Playlist';
-        } else {
-          button.innerHTML = '+';
-          button.title = 'Add to Playlist';
-        }
-      }
+      if (trackEl?.getAttribute('data-video') !== videoId) return;
+      
+      button.innerHTML = isInPlaylist ? '✓' : '+';
+      button.title = isInPlaylist ? 'Remove from Playlist' : 'Add to Playlist';
     });
   }
 
