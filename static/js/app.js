@@ -189,12 +189,17 @@ class MediaPlayer {
     
     event.target.playVideo();
     
-    setTimeout(() => {
-      const isPlaying = this.player.getPlayerState() === YT.PlayerState.PLAYING;
-      this.updatePlayPauseButtons(isPlaying);
-      if (isPlaying) this.startProgressInterval();
-    }, CONFIG.TIMINGS.playAttemptDelay);
+    setTimeout(() => this.checkInitialPlaybackState(), CONFIG.TIMINGS.playAttemptDelay);
+    this.setCurrentTrack(trackIndex, videoId);
+  }
 
+  checkInitialPlaybackState() {
+    const isPlaying = this.player.getPlayerState() === YT.PlayerState.PLAYING;
+    this.updatePlayPauseButtons(isPlaying);
+    if (isPlaying) this.startProgressInterval();
+  }
+
+  setCurrentTrack(trackIndex, videoId) {
     this.highlightTrack(trackIndex);
     this.highlightPlaylistTrack(videoId);
     this.currentIndex = trackIndex;
