@@ -447,13 +447,11 @@ class MediaPlayer {
 
   // Control methods
   toggleLoop() {
-    if (this.loopMode === CONFIG.LOOP_MODES.NONE) {
-      this.loopMode = CONFIG.LOOP_MODES.SINGLE;
-    } else if (this.loopMode === CONFIG.LOOP_MODES.SINGLE) {
-      this.loopMode = CONFIG.LOOP_MODES.PLAYLIST;
-    } else {
-      this.loopMode = CONFIG.LOOP_MODES.NONE;
-    }
+    const modes = Object.values(CONFIG.LOOP_MODES);
+    const currentIndex = modes.indexOf(this.loopMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    
+    this.loopMode = modes[nextIndex];
     this.updateLoopButtonUI();
   }
 
