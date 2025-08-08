@@ -78,26 +78,44 @@ class MediaPlayer {
 
   // Event listeners setup
   setupEventListeners() {
+    this.setupControlButtons();
+    this.setupProgressBar();
+    this.setupVolumeControls();
+    this.setupPlaylistControls();
+    this.setupTrackClickHandlers();
+    this.setupKeyboardShortcuts();
+    this.setupMiscEventListeners();
+  }
+
+  setupControlButtons() {
     // Control buttons
     this.elements.playPauseButton.addEventListener('click', () => this.togglePlayPause());
     this.elements.prevTrackButton.addEventListener('click', () => this.playPrevious());
     this.elements.nextTrackButton.addEventListener('click', () => this.playNext());
     this.elements.loopButton.addEventListener('click', () => this.toggleLoop());
+  }
 
+  setupProgressBar() {
     // Progress bar
     this.elements.progressContainer.addEventListener('click', (e) => this.handleProgressClick(e));
     this.elements.progressContainer.addEventListener('mousemove', (e) => this.handleProgressHover(e));
     this.elements.progressContainer.addEventListener('mouseleave', () => this.handleProgressLeave());
+  }
 
+  setupVolumeControls() {
     // Volume controls
     this.elements.volumeButton.addEventListener('click', () => this.toggleMute());
     this.elements.volumeSlider.addEventListener('input', (e) => this.handleVolumeChange(e));
     this.setupVolumeSliderBehavior();
+  }
 
+  setupPlaylistControls() {
     // Playlist
     this.elements.playlistButton.addEventListener('click', () => this.togglePlaylistPanel());
     this.elements.modalOverlay.addEventListener('click', () => this.togglePlaylistPanel());
+  }
 
+  setupTrackClickHandlers() {
     // Track clicks
     this.elements.tracks.forEach((track, index) => {
       track.addEventListener('click', () => this.playTrack(index));
@@ -107,10 +125,14 @@ class MediaPlayer {
     document.querySelectorAll('.add-to-playlist').forEach(button => {
       button.addEventListener('click', (e) => this.handleAddToPlaylistClick(e, button));
     });
+  }
 
+  setupKeyboardShortcuts() {
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+  }
 
+  setupMiscEventListeners() {
     // Video visibility toggle
     this.elements.playerControls.addEventListener('click', (e) => {
       if (e.target.closest('.player-controls-inner')) return;
