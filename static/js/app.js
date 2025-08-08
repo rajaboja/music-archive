@@ -274,22 +274,14 @@ class MediaPlayer {
   }
 
   playNext() {
-    if (this.playlist.length === 0) return;
-    
-    const currentVideoId = this.getCurrentVideoId();
-    const playlistIndex = this.findPlaylistIndex(currentVideoId);
-    
-    if (playlistIndex === -1) return;
-    
-    let nextIndex = playlistIndex + 1;
-    if (nextIndex >= this.playlist.length) {
-      nextIndex = 0;
-    }
-    
-    this.playPlaylistTrack(nextIndex);
+    this.navigatePlaylist(1);
   }
 
   playPrevious() {
+    this.navigatePlaylist(-1);
+  }
+
+  navigatePlaylist(direction) {
     if (this.playlist.length === 0) return;
     
     const currentVideoId = this.getCurrentVideoId();
@@ -297,12 +289,17 @@ class MediaPlayer {
     
     if (playlistIndex === -1) return;
     
-    let prevIndex = playlistIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = this.playlist.length - 1;
-    }
+    const nextIndex = this.getNextPlaylistIndex(playlistIndex, direction);
+    this.playPlaylistTrack(nextIndex);
+  }
+
+  getNextPlaylistIndex(currentIndex, direction) {
+    const nextIndex = currentIndex + direction;
     
-    this.playPlaylistTrack(prevIndex);
+    if (nextIndex < 0) return this.playlist.length - 1;
+    if (nextIndex >= this.playlist.length) return 0;
+    
+    return nextIndex;
   }
 
   playPlaylistTrack(playlistIndex) {
