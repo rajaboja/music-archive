@@ -468,14 +468,7 @@ class MediaPlayer {
 
   toggleVideoVisibility() {
     this.isVideoVisible = !this.isVideoVisible;
-    
-    if (this.isVideoVisible) {
-      this.elements.playerContainer.style.opacity = '1';
-      this.elements.playerContainer.style.pointerEvents = 'auto';
-    } else {
-      this.elements.playerContainer.style.opacity = '0';
-      this.elements.playerContainer.style.pointerEvents = 'none';
-    }
+    this.elements.playerContainer.classList.toggle('hidden', !this.isVideoVisible);
   }
 
   togglePlaylistPanel() {
