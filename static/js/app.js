@@ -23,29 +23,37 @@ class MediaPlayer {
 
   // DOM element initialization
   initializeElements() {
-    this.elements = {
-      playerContainer: document.getElementById('player-container'),
-      playerControls: document.getElementById('player-controls'),
-      player: document.getElementById('player'),
-      playPauseButton: document.getElementById('play-pause'),
-      prevTrackButton: document.getElementById('prev-track'),
-      nextTrackButton: document.getElementById('next-track'),
-      loopButton: document.getElementById('loop-button'),
-      playIcon: document.getElementById('play-icon'),
-      pauseIcon: document.getElementById('pause-icon'),
-      progressContainer: document.getElementById('progress-container'),
-      progressBar: document.getElementById('progress-bar'),
-      timeDisplay: document.getElementById('time-display'),
-      volumeButton: document.getElementById('volume-button'),
-      volumeSlider: document.getElementById('volume-slider'),
-      volumeContainer: document.getElementById('volume-container'),
-      volumeSliderContainer: document.getElementById('volume-slider-container'),
-      playlistButton: document.getElementById('playlist-button'),
-      playlistPanel: document.getElementById('playlist-panel'),
-      customPlaylist: document.getElementById('custom-playlist'),
-      modalOverlay: document.getElementById('modal-overlay'),
-      tracks: [...document.querySelectorAll('#playlist li')]
+    const elementIds = {
+      playerContainer: 'player-container',
+      playerControls: 'player-controls',
+      player: 'player',
+      playPauseButton: 'play-pause',
+      prevTrackButton: 'prev-track',
+      nextTrackButton: 'next-track',
+      loopButton: 'loop-button',
+      playIcon: 'play-icon',
+      pauseIcon: 'pause-icon',
+      progressContainer: 'progress-container',
+      progressBar: 'progress-bar',
+      timeDisplay: 'time-display',
+      volumeButton: 'volume-button',
+      volumeSlider: 'volume-slider',
+      volumeContainer: 'volume-container',
+      volumeSliderContainer: 'volume-slider-container',
+      playlistButton: 'playlist-button',
+      playlistPanel: 'playlist-panel',
+      customPlaylist: 'custom-playlist',
+      modalOverlay: 'modal-overlay'
     };
+    
+    this.elements = {};
+    for (const [key, id] of Object.entries(elementIds)) {
+      const element = document.getElementById(id);
+      if (!element) console.warn(`Missing element: ${id}`);
+      this.elements[key] = element;
+    }
+    
+    this.elements.tracks = [...document.querySelectorAll('#playlist li')];
   }
 
   // YouTube API loading
