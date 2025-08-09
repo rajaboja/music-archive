@@ -25,7 +25,8 @@ function updateSpreadsheetDaily() {
         video.snippet.title,
         video.contentDetails.duration,
         video.snippet.publishedAt,
-        video.snippet.description
+        video.snippet.description,
+        video.status.embeddable
       ];
     });
     
@@ -58,7 +59,7 @@ function fetchAllVideos() {
     });
 
     if (videoIds.length > 0) {
-      var videoDetails = YouTube.Videos.list('snippet,contentDetails', {
+      var videoDetails = YouTube.Videos.list('snippet,contentDetails,status', {
         id: videoIds.join(',')
       });
       allVideos = allVideos.concat(videoDetails.items);
