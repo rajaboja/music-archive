@@ -10,9 +10,8 @@ function updateSpreadsheetDaily() {
   const headers = getConfig('SHEETS.HEADERS.SOURCE');
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   
-  // Fetch all videos and categories
+  // Fetch all videos
   var allVideos = fetchAllVideos();
-  var categories = getVideoCategories();
   
   if (allVideos.length > 0) {
     // Sort videos by publishedAt date in descending order (newest first)
@@ -26,9 +25,7 @@ function updateSpreadsheetDaily() {
         video.snippet.title,
         video.contentDetails.duration,
         video.snippet.publishedAt,
-        video.snippet.description,
-        video.snippet.categoryId,
-        categories[video.snippet.categoryId] || 'Unknown'
+        video.snippet.description
       ];
     });
     
@@ -71,27 +68,4 @@ function fetchAllVideos() {
   } while (pageToken);
 
   return allVideos;
-}
-
-function getVideoCategories() {
-  const cacheKey = getConfig('CACHE.CATEGORIES_KEY');
-  const cacheTtl = getConfig('CACHE.CATEGORIES_TTL');
-  var cache = CacheService.getScriptCache();
-  var cached = cache.get(cacheKey);
-  
-  if (cached != null) {
-    return JSON.parse(cached);
-  }
-  
-  var categories = {};
-  var response = YouTube.VideoCategories.list('snippet', {
-    regionCode: 'US'
-  });
-  
-  response.items.forEach(function(item) {
-    categories[item.id] = item.snippet.title;
-  });
-  
-  cache.put(cacheKey, JSON.stringify(categories), cacheTtl);
-  return categories;
 } 

@@ -27,9 +27,9 @@ const AppConfig = {
 
   SHEETS: {
     HEADERS: {
-      SOURCE: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name'],
-      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name', 'is_music_video'],
-      CLEAN: ['video_id', 'title', 'length', 'published_date', 'description', 'category_id', 'category_name']
+      SOURCE: ['video_id', 'title', 'length', 'published_date', 'description'],
+      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'is_music_video'],
+      CLEAN: ['video_id', 'title', 'length', 'published_date', 'description']
     },
     COLUMNS: {
       VIDEO_ID: 0,
@@ -37,9 +37,7 @@ const AppConfig = {
       LENGTH: 2,
       PUBLISHED_DATE: 3,
       DESCRIPTION: 4,
-      CATEGORY_ID: 5,
-      CATEGORY_NAME: 6,
-      IS_MUSIC_VIDEO: 7
+      IS_MUSIC_VIDEO: 5
     }
   },
 
@@ -55,11 +53,6 @@ const AppConfig = {
 
   TRIGGERS: {
     INTERVAL_DAYS: 1
-  },
-
-  CACHE: {
-    CATEGORIES_KEY: 'VIDEO_CATEGORIES',
-    CATEGORIES_TTL: 21600
   },
 
   ENV: {
