@@ -26,6 +26,7 @@ function updateSpreadsheetDaily() {
         video.contentDetails.duration,
         video.snippet.publishedAt,
         video.snippet.description,
+        video.snippet.channelId,
         video.status.embeddable
       ];
     });

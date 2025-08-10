@@ -27,9 +27,9 @@ const AppConfig = {
 
   SHEETS: {
     HEADERS: {
-      SOURCE: ['video_id', 'title', 'length', 'published_date', 'description', 'embeddable'],
-      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'embeddable', 'is_music_video'],
-      CLEAN: ['video_id', 'title', 'length', 'published_date', 'description', 'embeddable']
+      SOURCE: ['video_id', 'title', 'length', 'published_date', 'description', 'channel_id', 'embeddable'],
+      PROCESSED: ['video_id', 'title', 'length', 'published_date', 'description', 'channel_id', 'embeddable', 'is_music_video'],
+      CLEAN: ['video_id', 'title', 'length', 'published_date', 'description', 'channel_id', 'embeddable']
     },
     COLUMNS: {
       VIDEO_ID: 0,
@@ -37,8 +37,9 @@ const AppConfig = {
       LENGTH: 2,
       PUBLISHED_DATE: 3,
       DESCRIPTION: 4,
-      EMBEDDABLE: 5,
-      IS_MUSIC_VIDEO: 6
+      CHANNEL_ID: 5,
+      EMBEDDABLE: 6,
+      IS_MUSIC_VIDEO: 7
     }
   },
 
