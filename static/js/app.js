@@ -12,7 +12,6 @@ class MediaPlayer {
     this.isVideoVisible = true;
     this.loopMode = CONFIG.LOOP_MODES.NONE;
     this.progressInterval = null;
-    this.volumeTimer = null;
     this.playerReady = false;
     this.playerInitialized = false;
 
@@ -106,7 +105,6 @@ class MediaPlayer {
     // Volume controls
     this.elements.volumeButton.addEventListener('click', () => this.toggleMute());
     this.elements.volumeSlider.addEventListener('input', (e) => this.handleVolumeChange(e));
-    this.setupVolumeSliderBehavior();
   }
 
   setupPlaylistControls() {
@@ -141,20 +139,6 @@ class MediaPlayer {
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => this.cleanup());
-  }
-
-  // Volume slider show/hide behavior
-  setupVolumeSliderBehavior() {
-    this.elements.volumeContainer.addEventListener('mouseenter', () => {
-      clearTimeout(this.volumeTimer);
-      this.elements.volumeSliderContainer.style.display = 'flex';
-    });
-
-    this.elements.volumeContainer.addEventListener('mouseleave', () => {
-      this.volumeTimer = setTimeout(() => {
-        this.elements.volumeSliderContainer.style.display = 'none';
-      }, CONFIG.TIMINGS.volumeHideDelay);
-    });
   }
 
   // Player creation and initialization

@@ -317,8 +317,10 @@ body {
 
 /* Volume controls */
 #volume-container {
-  position: relative;
-  padding: 0.25rem; /* Add padding to increase hover area */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
   border-radius: var(--pico-border-radius);
   transition: background-color 0.2s ease;
 }
@@ -328,18 +330,11 @@ body {
 }
 
 #volume-slider-container {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  display: none;
-  z-index: 1004;
-  width: 40px;
-  height: 100px;
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 80px;
+  height: 24px;
 }
 
 
@@ -348,8 +343,6 @@ body {
   width: 80px;
   height: 4px;
   margin: 0;
-  transform: rotate(-90deg);
-  transform-origin: center;
   background: transparent;
   outline: none;
   cursor: pointer;
@@ -376,7 +369,7 @@ body {
   cursor: pointer;
   border: none;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  margin-top: -4px; /* Center the thumb */
+  margin-top: -3.5px; /* Vertically center the thumb */
 }
 
 /* Firefox */
