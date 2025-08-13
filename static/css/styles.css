@@ -190,7 +190,7 @@ body {
   visibility: visible;
 }
 
-.add-to-playlist {
+.add-to-playlist, .remove-btn {
   background: transparent;
   border: none;
   color: var(--pico-primary-500);

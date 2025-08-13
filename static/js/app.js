@@ -403,7 +403,7 @@ class MediaPlayer {
     const removeButton = document.createElement('button');
     removeButton.className = 'remove-btn';
     removeButton.title = 'Remove from playlist';
-    removeButton.textContent = '✕';
+    removeButton.innerHTML = CONFIG.ICONS.REMOVE_FROM_PLAYLIST;
     
     div.appendChild(removeButton);
     return div;
