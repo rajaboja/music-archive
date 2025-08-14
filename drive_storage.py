@@ -1,8 +1,6 @@
 import pandas as pd
 from loguru import logger
 import asyncio
-import urllib.request
-import io
 from pathlib import Path
 
 
@@ -13,12 +11,9 @@ class DriveStorage:
         
 
     async def download_sheet(self):
-        url = f'https://docs.google.com/spreadsheets/d/{self.file_id}/export?format=xlsx'
+        url = f'https://docs.google.com/spreadsheets/d/{self.file_id}/export?format=csv'
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, url)
-            content = await asyncio.to_thread(response.read)
-            
-            self.df = pd.read_excel(io.BytesIO(content))
+            self.df = await asyncio.to_thread(pd.read_csv, url)
         except Exception as e:
             logger.exception(f"Error downloading sheet: {e}")
             raise
@@ -30,8 +25,6 @@ class DriveStorage:
             if self.df is None:
                 await self.download_sheet()
                 
-            # Clean spreadsheet already contains only music videos filtered by duration
-            # Just need to format the published_date
             self.df['published_date'] = pd.to_datetime(self.df['published_date']).dt.strftime('%Y-%m-%d')
             
             logger.info(f"Loaded {len(self.df)} music videos from clean spreadsheet")
