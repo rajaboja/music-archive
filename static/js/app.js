@@ -715,37 +715,6 @@ class MediaPlayer {
     }
     console.log('Media Player cleaned up');
   }
-
-  // Public API methods for external access
-  getState() {
-    return {
-      player: this.player,
-      playlist: this.playlist,
-      currentIndex: this.currentIndex,
-      isPlaying: this.isPlaying,
-      loopMode: this.loopMode
-    };
-  }
-
-  setLoopMode(mode) {
-    if (Object.values(CONFIG.LOOP_MODES).includes(mode)) {
-      this.loopMode = mode;
-      this.updateLoopButtonUI();
-    }
-  }
-
-  setVolume(volume) {
-    if (this.player && volume >= 0 && volume <= 100) {
-      this.player.setVolume(volume);
-      this.elements.volumeSlider.value = volume;
-    }
-  }
-
-  seekTo(seconds) {
-    if (this.player) {
-      this.player.seekTo(seconds, true);
-    }
-  }
 }
 
 // Initialize the application when DOM is ready
