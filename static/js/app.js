@@ -727,22 +727,6 @@ class MediaPlayer {
     };
   }
 
-  getPlayer() {
-    return this.player;
-  }
-
-  getUserPlaylist() {
-    return this.playlist;
-  }
-
-  addTrackToPlaylist(videoId, title) {
-    this.addToPlaylist(videoId, title);
-  }
-
-  removeTrackFromPlaylist(videoId) {
-    this.removeFromPlaylist(videoId);
-  }
-
   setLoopMode(mode) {
     if (Object.values(CONFIG.LOOP_MODES).includes(mode)) {
       this.loopMode = mode;
@@ -757,20 +741,9 @@ class MediaPlayer {
     }
   }
 
-  mute() {
-    this.toggleMute();
-  }
-
   seekTo(seconds) {
     if (this.player) {
       this.player.seekTo(seconds, true);
-    }
-  }
-
-  seekToPercent(percent) {
-    if (this.player && percent >= 0 && percent <= 100) {
-      const duration = this.player.getDuration();
-      this.player.seekTo((duration * percent) / 100, true);
     }
   }
 }
