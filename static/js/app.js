@@ -442,11 +442,7 @@ class MediaPlayer {
   toggleMute() {
     if (!this.player) return;
     
-    if (this.player.isMuted()) {
-      this.player.unMute();
-    } else {
-      this.player.mute();
-    }
+    this.player.isMuted() ? this.player.unMute() : this.player.mute();
     this.updateVolumeUI();
   }
 
