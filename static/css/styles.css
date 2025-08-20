@@ -344,70 +344,10 @@ body {
   height: 4px;
   margin: 0;
   background: transparent;
-  outline: none;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-/* Webkit browsers (Chrome, Safari, Edge) */
-#volume-slider::-webkit-slider-track {
-  background: rgba(170, 170, 170, 0.4);
-  height: 4px;
-  border-radius: 2px;
-  border: none;
-  box-shadow: none;
-}
-
-#volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--pico-primary-500);
-  height: 12px;
-  width: 12px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  margin-top: -3.5px; /* Vertically center the thumb */
-}
-
-/* Firefox */
-#volume-slider::-moz-range-track {
-  background: rgba(170, 170, 170, 0.4);
-  height: 4px;
-  border-radius: 2px;
   border: none;
   outline: none;
-}
-
-#volume-slider::-moz-range-thumb {
-  background: var(--pico-primary-500);
-  height: 12px;
-  width: 12px;
-  border-radius: 50%;
   cursor: pointer;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-/* Remove any focus outline */
-#volume-slider:focus {
-  outline: none;
-}
-
-#volume-slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px var(--pico-primary-500), 0 1px 3px rgba(0,0,0,0.2);
-}
-
-
-
-[data-theme="dark"] #volume-slider::-webkit-slider-track {
-  background: rgba(120, 120, 120, 0.4);
-}
-
-[data-theme="dark"] #volume-slider::-moz-range-track {
-  background: rgba(120, 120, 120, 0.4);
+  accent-color: var(--pico-primary-500);
 }
 
 /* Playlist panel */
@@ -530,10 +470,8 @@ body {
     width: 20px;
     height: 20px;
   }
-}
 
-/* Touch-friendly targets */
-@media (max-width: 768px) {
+  /* Touch-friendly targets */
   .playlist li {
     padding: 0; /* No padding on mobile either */
   }
