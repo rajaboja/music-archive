@@ -567,10 +567,9 @@ class MediaPlayer {
     if (!this.player) return;
     
     const volume = this.player.getVolume();
-    const isMuted = this.player.isMuted();
     
     this.elements.volumeSlider.value = volume;
-    this.updateVolumeButtonState(isMuted);
+    this.updateVolumeButtonState(volume === 0);
   }
 
   updateVolumeButtonState(isMuted) {
