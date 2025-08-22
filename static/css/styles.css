@@ -271,6 +271,17 @@ body {
   color: var(--pico-primary-700);
 }
 
+/* Volume button muted state */
+.control-button.muted {
+  color: var(--pico-muted-color);
+  opacity: 0.6;
+}
+
+.control-button.muted:hover {
+  color: var(--pico-muted-color);
+  opacity: 0.8;
+}
+
 /* Progress container */
 .progress-group {
   display: flex;
